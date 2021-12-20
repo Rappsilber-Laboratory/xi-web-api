@@ -1,5 +1,5 @@
 import flask
-from flask import request
+from flask import request, jsonify
 from flask_cors import CORS
 import psycopg2  # todo - use sqlalchemy instead?
 import os
@@ -14,8 +14,8 @@ app.config["DEBUG"] = True
 @app.route('/get_data', methods=['GET'])
 def get_data():
     uuid = request.args.get('uuid')
-    return json.dumps(get_data_object(uuid))
-
+    # return json.dumps(get_data_object(uuid))
+    return jsonify(get_data_object(uuid))
 
 def get_data_object(uuid):
     """ Connect to the PostgreSQL database server """
@@ -32,6 +32,7 @@ def get_data_object(uuid):
         # create a cursor
         cur = conn.cursor()
 
+        # i see... multiple return types, that's kind of cool, maybe a bit confusing the way i've used it here
         data["resultset"], data["searches"] = get_resultset_search_metadata(cur, uuid)
         data["matches"], peptide_clause = get_matches(cur, uuid)
         data["peptides"], protein_clause = get_peptides(cur, peptide_clause)
@@ -76,7 +77,7 @@ def get_resultset_search_metadata(cur, uuid):
         search["id"] = search_row[5]
         search["name"] = search_row[6]
         search["config"] = json.loads(search_row[7])
-        search["note"] = search_row[8]
+        # search["note"] = search_row[8]
         searches[search["id"]] = search
     return resultset_meta, searches
 
@@ -88,7 +89,7 @@ def get_matches(cur, uuid):
                 from ResultMatch as rm 
                     JOIN match as m on rm.match_id = m.id 
                     JOIN matchedspectrum as ms ON rm.match_id = ms.match_id 
-                    where rm.resultset_id = %s  
+                    where rm.resultset_id = %s AND m.site1 != -1 
                    """
     # print(sql)
     cur.execute(sql, [uuid])
@@ -107,8 +108,8 @@ def get_matches(cur, uuid):
                 "id": match_row[0],
                 "pi1": peptide1_id,
                 "pi2": peptide2_id,
-                "s1": match_row[3],
-                "s2": match_row[4],
+                "s1": match_row[3] + 1,
+                "s2": match_row[4] + 1,
                 "sc": match_row[5],
                 "cl": match_row[6],
                 "si": search_id,
@@ -133,7 +134,7 @@ def get_matches(cur, uuid):
     # create sql clause that selects peptides by id and resultset
     # (search_id = a AND id in(x,y,z)) OR (search_id = b AND (...)) OR ...
     first_search = True
-    peptide_clause = "(";
+    peptide_clause = "("
     for k, v in search_peptide_ids.items():
         if first_search:
             first_search = False
@@ -159,7 +160,7 @@ def get_peptides(cur, peptide_clause):
     sql = """select mp.id, (array_agg(mp.search_id))[1] as search_uuid,
                             (array_agg(mp.base_sequence))[1] as sequence, 
                             array_agg(pp.protein_id) as proteins, 
-                            array_agg(pp.start) as positions 
+                            array_agg(pp.start + 1) as positions 
                                 from modifiedpeptide as mp
                                 JOIN peptideposition as pp on mp.id = pp.mod_pep_id AND mp.search_id = pp.search_id  
                             where """ + peptide_clause + """ GROUP BY mp.id
