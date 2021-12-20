@@ -17,6 +17,7 @@ def get_data():
     # return json.dumps(get_data_object(uuid))
     return jsonify(get_data_object(uuid))
 
+
 def get_data_object(uuid):
     """ Connect to the PostgreSQL database server """
     conn = None
@@ -32,7 +33,6 @@ def get_data_object(uuid):
         # create a cursor
         cur = conn.cursor()
 
-        # i see... multiple return types, that's kind of cool, maybe a bit confusing the way i've used it here
         data["resultset"], data["searches"] = get_resultset_search_metadata(cur, uuid)
         data["matches"], peptide_clause = get_matches(cur, uuid)
         data["peptides"], protein_clause = get_peptides(cur, peptide_clause)
@@ -54,11 +54,11 @@ def get_resultset_search_metadata(cur, uuid):
     sql = """
                 SELECT rs.name, rs.note, rs.config, rs.main_score, rst.name,
                       s.id, s.name, s.config, s.note
-                 FROM resultset as rs 
-                  LEFT JOIN resultsettype as rst on (rs.rstype_id = rst.id) 
-                  LEFT JOIN ResultSearch as result_search on (rs.id = result_search.resultset_id) 
-                  LEFT JOIN Search as s on (result_search.search_id = s.id) 
-                where rs.id = %s  
+                 FROM resultset as rs
+                  LEFT JOIN resultsettype as rst on (rs.rstype_id = rst.id)
+                  LEFT JOIN ResultSearch as result_search on (rs.id = result_search.resultset_id)
+                  LEFT JOIN Search as s on (result_search.search_id = s.id)
+                where rs.id = %s
                            """
     cur.execute(sql, [uuid])
     resultset_meta_cur = cur.fetchall()
@@ -83,13 +83,14 @@ def get_resultset_search_metadata(cur, uuid):
 
 
 def get_matches(cur, uuid):
-    # todo - the join to matchedspectrum isn't right for cleavable crosslinker - needs a GROUP BY match_id?'
-    sql = """select m.id, m.pep1_id, m.pep2_id, m.site1, m.site2, m.score, m.crosslinker_id, 
-                    m.search_id, m.calc_mass, m.assumed_prec_charge, m.assumed_prec_mz, ms.spectrum_id 
-                from ResultMatch as rm 
-                    JOIN match as m on rm.match_id = m.id 
-                    JOIN matchedspectrum as ms ON rm.match_id = ms.match_id 
-                    where rm.resultset_id = %s AND m.site1 != -1 
+    # todo - the join to matchedspectrum for cleavable crosslinker - needs a GROUP BY match_id?'
+    sql = """select m.id, m.pep1_id, m.pep2_id, m.site1, m.site2, m.score, m.crosslinker_id,
+                    m.search_id, m.calc_mass, m.assumed_prec_charge, m.assumed_prec_mz,
+                    ms.spectrum_id
+                from ResultMatch as rm
+                    JOIN match as m on rm.match_id = m.id
+                    JOIN matchedspectrum as ms ON rm.match_id = ms.match_id
+                    where rm.resultset_id = %s AND m.site1 != -1
                    """
     # print(sql)
     cur.execute(sql, [uuid])
@@ -158,11 +159,12 @@ def get_matches(cur, uuid):
 
 def get_peptides(cur, peptide_clause):
     sql = """select mp.id, (array_agg(mp.search_id))[1] as search_uuid,
-                            (array_agg(mp.base_sequence))[1] as sequence, 
-                            array_agg(pp.protein_id) as proteins, 
-                            array_agg(pp.start + 1) as positions 
+                            (array_agg(mp.base_sequence))[1] as sequence,
+                            array_agg(pp.protein_id) as proteins,
+                            array_agg(pp.start + 1) as positions
                                 from modifiedpeptide as mp
-                                JOIN peptideposition as pp on mp.id = pp.mod_pep_id AND mp.search_id = pp.search_id  
+                                JOIN peptideposition as pp
+                                ON mp.id = pp.mod_pep_id AND mp.search_id = pp.search_id
                             where """ + peptide_clause + """ GROUP BY mp.id
                            """
     # print(sql);
@@ -197,7 +199,7 @@ def get_peptides(cur, peptide_clause):
     # create sql clause that selects proteins by id and resultset
     # (search_id = a AND id in(x,y,z)) OR (search_id = b AND (...)) OR ...
     first_search = True
-    protein_clause = "(";
+    protein_clause = "("
     for k, v in search_protein_ids.items():
         if first_search:
             first_search = False

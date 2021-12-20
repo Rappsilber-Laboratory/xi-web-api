@@ -40,7 +40,6 @@ def get_data_object(uuid):
         cur.execute(sql, [uuid])
         data = cur.fetchall()
 
-
         # close the communication with the PostgreSQL
         cur.close()
     except (Exception, psycopg2.DatabaseError) as error:
