@@ -9,6 +9,9 @@ flask_cors = "*"
 psycopg2 = "*"
 
 [dev-packages]
+pytest-cov = "*"
+pytest-flask = "*"
+pytest-pydocstyle = "*"
 pytest = ">=3.6.4"
 pytest-pep8 = "*"
 flake8 = ">=3.7.7"
