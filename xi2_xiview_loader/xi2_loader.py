@@ -5,7 +5,7 @@ import json
 from configparser import ConfigParser
 
 
-def create_app():
+def create_app(config='database.ini'):
     """
     Create the flask app.
 
@@ -32,7 +32,7 @@ def create_app():
     })
 
     # https://www.postgresqltutorial.com/postgresql-python/connect/
-    def parse_database_info(filename='database.ini', section='postgresql'):
+    def parse_database_info(filename, section='postgresql'):
         # create a parser
         parser = ConfigParser()
         # read config file
@@ -50,7 +50,7 @@ def create_app():
         return db
 
     # read connection information
-    db_info = parse_database_info()
+    db_info = parse_database_info(config)
 
     @app.route('/get_data', methods=['GET'])
     def get_data():

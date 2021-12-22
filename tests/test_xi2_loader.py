@@ -1,11 +1,14 @@
 from xi2_xiview_loader import create_app
 import pytest
 from flask import url_for
+import os
 
 
 @pytest.fixture
 def app():
-    app = create_app()
+    fixtures_dir = os.path.join(os.path.dirname(__file__), 'fixtures')
+    config = os.path.join(fixtures_dir, 'test_db.ini')
+    app = create_app(config)
     return app
 
 
