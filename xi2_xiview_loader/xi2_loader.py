@@ -165,7 +165,7 @@ def get_peptides(cur, peptide_clause):
                                 from modifiedpeptide as mp
                                 JOIN peptideposition as pp
                                 ON mp.id = pp.mod_pep_id AND mp.search_id = pp.search_id
-                            where """ + peptide_clause + """ GROUP BY mp.id
+                            where """ + peptide_clause + """ GROUP BY mp.id, mp.search_id
                            """
     # print(sql);
     cur.execute(sql)
