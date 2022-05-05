@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import psycopg2  # todo - use sqlalchemy instead? LK: There's also flask_sqlalchemy
 import json
@@ -11,7 +11,7 @@ def create_app(config='database.ini'):
 
     :return: flask app
     """
-    app = Flask(__name__)
+    app = Flask(__name__, static_url_path="", static_folder='../static')
 
     # Load flask config
     if app.env == 'development':
@@ -24,12 +24,13 @@ def create_app(config='database.ini'):
             ...
 
     # add CORS header
-    CORS(app, resources={
-        r"/get_data": {
-            "origins": "*",
-            "headers": app.config['CORS_HEADERS']
-        }
-    })
+    CORS(app)
+    # CORS(app, resources={
+    #     r"/get_data": {
+    #         "origins": "*",
+    #         "headers": app.config['CORS_HEADERS']
+    #     }
+    # })
 
     # https://www.postgresqltutorial.com/postgresql-python/connect/
     def parse_database_info(filename, section='postgresql'):
@@ -56,6 +57,16 @@ def create_app(config='database.ini'):
     def get_data():
         uuid = request.args.get('uuid')
         return jsonify(get_data_object(uuid))
+
+    @app.route('/get_peaklist', methods=['GET'])
+    def get_peaklist():
+        uuid = request.args.get('uuid')
+        return jsonify(get_peaklist_object(uuid))
+
+    @app.route('/network.html', methods=['GET'])
+    def network():
+        # uuid = request.args.get('uuid')
+        return  app.send_static_file('network.html')
 
     def get_data_object(uuid):
         """ Connect to the PostgreSQL database server """
@@ -87,6 +98,33 @@ def create_app(config='database.ini'):
                 print('Database connection closed.')
             return data
 
+    def get_peaklist_object(spectrum_uuid):
+        """ Connect to the PostgreSQL database server """
+        conn = None
+        data = {}
+        try:
+            # connect to the PostgreSQL server
+            print('Connecting to the PostgreSQL database...')
+            conn = psycopg2.connect(**db_info)
+
+            # create a cursor
+            cur = conn.cursor()
+
+            sql = "SELECT intensity, mz FROM spectrumpeaks WHERE id = %s"
+
+            cur.execute(sql, [spectrum_uuid])
+            data = cur.fetchall()[0]
+            print("finished")
+            # close the communication with the PostgreSQL
+            cur.close()
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+        finally:
+            if conn is not None:
+                conn.close()
+                print('Database connection closed.')
+            return data
+
     return app
 
 
@@ -107,7 +145,8 @@ def get_resultset_search_metadata(cur, uuid):
     resultset_meta = {
         "name": first_row[0],
         "note": first_row[1],
-        "config": json.loads(first_row[2]),
+        # "config": json.loads(first_row[2]),
+        "config": first_row[2],
         "mainscore": first_row[3],
         "resultsettype": first_row[4]
     }
@@ -131,7 +170,7 @@ def get_matches(cur, uuid):
                 from ResultMatch as rm
                     JOIN match as m on rm.match_id = m.id
                     JOIN matchedspectrum as ms ON rm.match_id = ms.match_id
-                    where rm.resultset_id = %s AND m.site1 != -1
+                    where rm.resultset_id = %s AND m.site1 >0 AND m.site2 >0
                    """
     # print(sql)
     cur.execute(sql, [uuid])
@@ -199,9 +238,9 @@ def get_matches(cur, uuid):
 
 def get_peptides(cur, peptide_clause):
     sql = """select mp.id, (array_agg(mp.search_id))[1] as search_uuid,
-                            (array_agg(mp.base_sequence))[1] as sequence,
+                            (array_agg(mp.sequence))[1] as sequence,
                             array_agg(pp.protein_id) as proteins,
-                            array_agg(pp.start + 1) as positions
+                            array_agg(pp.start) as positions
                                 from modifiedpeptide as mp
                                 JOIN peptideposition as pp
                                 ON mp.id = pp.mod_pep_id AND mp.search_id = pp.search_id
@@ -276,3 +315,5 @@ def get_proteins(cur, protein_clause):
         }
         proteins.append(protein)
     return proteins
+
+
