@@ -1,53 +1,93 @@
-import flask
-from flask import request, jsonify
+from flask import Flask, request, jsonify
 from flask_cors import CORS
-import psycopg2  # todo - use sqlalchemy instead?
-import os
-from config import config
+import psycopg2  # todo - use sqlalchemy instead? LK: There's also flask_sqlalchemy
 import json
-
-app = flask.Flask(__name__)
-cors = CORS(app)  # todo - not working?
-app.config["DEBUG"] = True
+from configparser import ConfigParser
 
 
-@app.route('/get_data', methods=['GET'])
-def get_data():
-    uuid = request.args.get('uuid')
-    # return json.dumps(get_data_object(uuid))
-    return jsonify(get_data_object(uuid))
+def create_app(config='database.ini'):
+    """
+    Create the flask app.
 
+    :return: flask app
+    """
+    app = Flask(__name__)
 
-def get_data_object(uuid):
-    """ Connect to the PostgreSQL database server """
-    conn = None
-    data = {}
-    try:
-        # read connection parameters
-        params = config()
+    # Load flask config
+    if app.env == 'development':
+        app.config.from_object('xi2_xiview_loader.config.DevelopmentConfig')
+    else:
+        app.config.from_object('xi2_xiview_loader.config.ProductionConfig')
+        try:
+            app.config.from_envvar('XI2XIVIEWLOADER_SETTINGS')
+        except (FileNotFoundError, RuntimeError):
+            ...
 
-        # connect to the PostgreSQL server
-        print('Connecting to the PostgreSQL database...')
-        conn = psycopg2.connect(**params)
+    # add CORS header
+    CORS(app, resources={
+        r"/get_data": {
+            "origins": "*",
+            "headers": app.config['CORS_HEADERS']
+        }
+    })
 
-        # create a cursor
-        cur = conn.cursor()
+    # https://www.postgresqltutorial.com/postgresql-python/connect/
+    def parse_database_info(filename, section='postgresql'):
+        # create a parser
+        parser = ConfigParser()
+        # read config file
+        parser.read(filename)
 
-        data["resultset"], data["searches"] = get_resultset_search_metadata(cur, uuid)
-        data["matches"], peptide_clause = get_matches(cur, uuid)
-        data["peptides"], protein_clause = get_peptides(cur, peptide_clause)
-        data["proteins"] = get_proteins(cur, protein_clause)
+        # get section, default to postgresql
+        db = {}
+        if parser.has_section(section):
+            params = parser.items(section)
+            for param in params:
+                db[param[0]] = param[1]
+        else:
+            raise Exception('Section {0} not found in the {1} file'.format(section, filename))
 
-        print("finished")
-        # close the communication with the PostgreSQL
-        cur.close()
-    except (Exception, psycopg2.DatabaseError) as error:
-        print(error)
-    finally:
-        if conn is not None:
-            conn.close()
-            print('Database connection closed.')
-        return data
+        return db
+
+    # read connection information
+    db_info = parse_database_info(config)
+
+    @app.route('/get_data', methods=['GET'])
+    def get_data():
+        uuid = request.args.get('uuid')
+        return jsonify(get_data_object(uuid))
+
+    def get_data_object(uuid):
+        """ Connect to the PostgreSQL database server """
+        conn = None
+        data = {}
+        try:
+            # connect to the PostgreSQL server
+            print('Connecting to the PostgreSQL database...')
+            conn = psycopg2.connect(**db_info)
+
+            # create a cursor
+            cur = conn.cursor()
+
+            # i see... multiple return types, that's kind of cool,
+            # maybe a bit confusing the way I've used it here
+            data["resultset"], data["searches"] = get_resultset_search_metadata(cur, uuid)
+            data["matches"], peptide_clause = get_matches(cur, uuid)
+            data["peptides"], protein_clause = get_peptides(cur, peptide_clause)
+            data["proteins"] = get_proteins(cur, protein_clause)
+
+            print("finished")
+            # close the communication with the PostgreSQL
+            cur.close()
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+        finally:
+            if conn is not None:
+                conn.close()
+                print('Database connection closed.')
+            return data
+
+    return app
 
 
 def get_resultset_search_metadata(cur, uuid):
@@ -73,11 +113,12 @@ def get_resultset_search_metadata(cur, uuid):
     }
     searches = {}
     for search_row in resultset_meta_cur:
-        search = {}
-        search["id"] = search_row[5]
-        search["name"] = search_row[6]
-        search["config"] = json.loads(search_row[7])
-        # search["note"] = search_row[8]
+        search = {
+            "id": search_row[5],
+            "name": search_row[6],
+            "config": json.loads(search_row[7]),
+            # "note": search_row[8]
+        }
         searches[search["id"]] = search
     return resultset_meta, searches
 
@@ -119,7 +160,6 @@ def get_matches(cur, uuid):
                 "pc_mz": match_row[10],
                 "sp_id": match_row[11]
             }
-            peptide_ids = None
             if search_id in search_peptide_ids:
                 peptide_ids = search_peptide_ids[search_id]
             else:
@@ -184,7 +224,6 @@ def get_peptides(cur, peptide_clause):
                 "prt": prots,
                 "pos": peptide_row[4]
             }
-            protein_ids = None
             if search_id in search_protein_ids:
                 protein_ids = search_protein_ids[search_id]
             else:
@@ -237,7 +276,3 @@ def get_proteins(cur, protein_clause):
         }
         proteins.append(protein)
     return proteins
-
-
-if __name__ == '__main__':
-    app.run(host=os.getenv("app_host"), port="5001", debug=True)
