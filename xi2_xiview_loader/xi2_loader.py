@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 import psycopg2  # todo - use sqlalchemy instead? LK: There's also flask_sqlalchemy
 import json
