@@ -25,6 +25,7 @@ def create_app(config='database.ini'):
 
     # add CORS header
     CORS(app)
+
     # CORS(app, resources={
     #     r"/get_data": {
     #         "origins": "*",
@@ -55,7 +56,7 @@ def create_app(config='database.ini'):
 
     @app.route('/get_data', methods=['GET'])
     def get_data():
-        uuid = request.args.get('uuid')
+        uuid = request.args.get('uuid')  # uuid of search
         return jsonify(get_data_object(uuid))
 
     @app.route('/get_peaklist', methods=['GET'])
@@ -63,10 +64,81 @@ def create_app(config='database.ini'):
         uuid = request.args.get('uuid')
         return jsonify(get_peaklist_object(uuid))
 
+    @app.route('/save_layout', methods=['POST'])
+    def save_layout():
+        uuid = request.form['uuid']
+        layout = request.form['layout']
+        description = request.form['name']
+
+        try:
+            # connect to the PostgreSQL server
+            print('Connecting to the PostgreSQL database...')
+            conn = psycopg2.connect(**db_info)
+
+            # create a cursor
+            cur = conn.cursor()
+
+            sql = "INSERT INTO layout (resultset_id, layout, description) VALUES (%s, %s, %s)"
+
+            cur.execute(sql, [uuid, layout, description])
+            conn.commit()
+
+            print("finished")
+            # close the communication with the PostgreSQL
+            cur.close()
+            return "Layout saved!"
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+            return "Database error:\n" + str(error)
+        finally:
+            if conn is not None:
+                conn.close()
+                print('Database connection closed.')
+
+    @app.route('/load_layout', methods=['POST'])
+    def load_layout():
+        # actually returns all different layouts available
+        uuid = request.form['uuid']
+
+        try:
+            # connect to the PostgreSQL server
+            print('Connecting to the PostgreSQL database...')
+            conn = psycopg2.connect(**db_info)
+
+            # create a cursor
+            cur = conn.cursor()
+
+            sql = """SELECT t1.layout AS layout, t1.description AS name FROM layout AS t1 
+                  WHERE t1.resultset_id = %s AND t1.time_saved IN 
+                  (SELECT max(t1.time_saved) FROM layout AS t1  WHERE t1.resultset_id = %s GROUP BY t1.description);"""
+            # sql = """SELECT t1.description, t1.layout FROM layout AS t1
+            #     WHERE t1.resultset_id = %s ORDER BY t1.time_saved desc LIMIT 1"""
+            cur.execute(sql, [uuid, uuid])
+            layouts = cur.fetchall()
+            data = {}
+            # xinet_layout = {
+            #     "name": data[0],
+            #     "layout": data[1]
+            # }
+            for layout in layouts:
+                data[str(layout[1])] = layout[0]
+
+            print("finished")
+            # close the communication with the PostgreSQL
+            cur.close()
+            return jsonify(data)
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+            return "Database error:\n" + str(error)
+        finally:
+            if conn is not None:
+                conn.close()
+                print('Database connection closed.')
+
     @app.route('/network.html', methods=['GET'])
     def network():
         # uuid = request.args.get('uuid')
-        return  app.send_static_file('network.html')
+        return app.send_static_file('network.html')
 
     def get_data_object(uuid):
         """ Connect to the PostgreSQL database server """
@@ -82,10 +154,12 @@ def create_app(config='database.ini'):
 
             # i see... multiple return types, that's kind of cool,
             # maybe a bit confusing the way I've used it here
+            data["sid"] = uuid
             data["resultset"], data["searches"] = get_resultset_search_metadata(cur, uuid)
             data["matches"], peptide_clause = get_matches(cur, uuid)
             data["peptides"], protein_clause = get_peptides(cur, peptide_clause)
             data["proteins"] = get_proteins(cur, protein_clause)
+            data["xiNETLayout"] = get_layout(cur, uuid)
 
             print("finished")
             # close the communication with the PostgreSQL
@@ -172,7 +246,6 @@ def get_matches(cur, uuid):
                     JOIN matchedspectrum as ms ON rm.match_id = ms.match_id
                     where rm.resultset_id = %s AND m.site1 >0 AND m.site2 >0
                    """
-    # print(sql)
     cur.execute(sql, [uuid])
     matches = []
     search_peptide_ids = {}
@@ -317,3 +390,13 @@ def get_proteins(cur, protein_clause):
     return proteins
 
 
+def get_layout(cur, uuid):
+    sql = """SELECT t1.description, t1.layout FROM layout AS t1 
+        WHERE t1.resultset_id = %s ORDER BY t1.time_saved desc LIMIT 1"""
+    cur.execute(sql, [uuid])
+    data = cur.fetchall()[0]
+    xinet_layout = {
+        "name": data[0],
+        "layout": data[1]
+    }
+    return xinet_layout
