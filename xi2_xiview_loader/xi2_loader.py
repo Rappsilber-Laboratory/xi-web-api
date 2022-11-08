@@ -279,7 +279,7 @@ def get_matches(cur, uuid):
                 search_peptide_ids[search_id] = peptide_ids
 
             peptide_ids.add(peptide1_id)
-            if peptide2_id:
+            if peptide2_id is not None:
                 peptide_ids.add(peptide2_id)
 
             matches.append(match)
