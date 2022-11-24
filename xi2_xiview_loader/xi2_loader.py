@@ -397,9 +397,10 @@ def get_layout(cur, uuid):
     sql = """SELECT t1.description, t1.layout FROM layout AS t1 
         WHERE t1.resultset_id = %s ORDER BY t1.time_saved desc LIMIT 1"""
     cur.execute(sql, [uuid])
-    data = cur.fetchall()[0]
-    xinet_layout = {
-        "name": data[0],
-        "layout": data[1]
-    }
-    return xinet_layout
+    data = cur.fetchall()
+    if data:
+        xinet_layout = {
+            "name": data[0][0],
+            "layout": data[0][1]
+        }
+        return xinet_layout
