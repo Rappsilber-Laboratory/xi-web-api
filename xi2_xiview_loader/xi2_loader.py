@@ -206,10 +206,10 @@ def get_resultset_search_metadata(cur, uuid):
     sql = """
                 SELECT rs.name, rs.note, rs.config, rs.main_score, rst.name,
                       s.id, s.name, s.config, s.note
-                 FROM resultset as rs
-                  LEFT JOIN resultsettype as rst on (rs.rstype_id = rst.id)
-                  LEFT JOIN ResultSearch as result_search on (rs.id = result_search.resultset_id)
-                  LEFT JOIN Search as s on (result_search.search_id = s.id)
+                 FROM resultset AS rs
+                  LEFT JOIN resultsettype AS rst ON (rs.rstype_id = rst.id)
+                  LEFT JOIN ResultSearch AS result_search ON (rs.id = result_search.resultset_id)
+                  LEFT JOIN Search AS s ON (result_search.search_id = s.id)
                 WHERE rs.id = %s
                            """
     cur.execute(sql, [uuid])
@@ -241,8 +241,8 @@ def get_matches(cur, uuid, main_score_index):
     sql = """SELECT m.id, m.pep1_id, m.pep2_id, m.site1, m.site2, rm.scores[%s], m.crosslinker_id,
                     m.search_id, m.calc_mass, m.assumed_prec_charge, m.assumed_prec_mz,
                     ms.spectrum_id
-                FROM ResultMatch as rm
-                    JOIN match as m on rm.match_id = m.id
+                FROM ResultMatch AS rm
+                    JOIN match AS m ON rm.match_id = m.id
                     JOIN matchedspectrum as ms ON rm.match_id = ms.match_id
                     WHERE rm.resultset_id = %s AND m.site1 >0 AND m.site2 >0
                     AND rm.top_ranking = TRUE;"""
@@ -294,7 +294,7 @@ def get_matches(cur, uuid, main_score_index):
             first_search = False
         else:
             peptide_clause += " OR "
-        peptide_clause += "(mp.search_id = '" + str(search_id) + "' AND mp.id in ("
+        peptide_clause += "(mp.search_id = '" + str(search_id) + "' AND mp.id IN ("
         # print("rs:" + str(k))
         first_pep_id = True
         for pep_id in v:
@@ -312,14 +312,14 @@ def get_matches(cur, uuid, main_score_index):
 
 def get_peptides(cur, peptide_clause):
     if peptide_clause != "()":
-        sql = """select mp.id, (array_agg(mp.search_id))[1] as search_uuid,
-                                (array_agg(mp.sequence))[1] as sequence,
-                                array_agg(pp.protein_id) as proteins,
-                                array_agg(pp.start) as positions
-                                    from modifiedpeptide as mp
-                                    JOIN peptideposition as pp
+        sql = """SELECT mp.id, (array_agg(mp.search_id))[1] AS search_uuid,
+                                (array_agg(mp.sequence))[1] AS sequence,
+                                array_agg(pp.protein_id) AS proteins,
+                                array_agg(pp.start) AS positions
+                                    FROM modifiedpeptide AS mp
+                                    JOIN peptideposition AS pp
                                     ON mp.id = pp.mod_pep_id AND mp.search_id = pp.search_id
-                                where """ + peptide_clause + """ GROUP BY mp.id, mp.search_id
+                                WHERE """ + peptide_clause + """ GROUP BY mp.id, mp.search_id
                                """
         # print(sql);
         cur.execute(sql)
@@ -358,7 +358,7 @@ def get_peptides(cur, peptide_clause):
                 first_search = False
             else:
                 protein_clause += " OR "
-            protein_clause += "(search_id = '" + str(search_id) + "' AND id in ("
+            protein_clause += "(search_id = '" + str(search_id) + "' AND id IN ("
             first_prot_id = True
             for prot_id in v:
                 if first_prot_id:
@@ -395,7 +395,7 @@ def get_proteins(cur, protein_clause):
 
 def get_layout(cur, uuid):
     sql = """SELECT t1.description, t1.layout FROM layout AS t1 
-        WHERE t1.resultset_id = %s ORDER BY t1.time_saved desc LIMIT 1"""
+        WHERE t1.resultset_id = %s ORDER BY t1.time_saved DESC LIMIT 1"""
     cur.execute(sql, [uuid])
     data = cur.fetchall()
     if data:
