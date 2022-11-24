@@ -156,7 +156,7 @@ def create_app(config='database.ini'):
             # maybe a bit confusing the way I've used it here
             data["sid"] = uuid
             data["resultset"], data["searches"] = get_resultset_search_metadata(cur, uuid)
-            data["matches"], peptide_clause = get_matches(cur, uuid)
+            data["matches"], peptide_clause = get_matches(cur, uuid, data["resultset"]["mainscore"])
             data["peptides"], protein_clause = get_peptides(cur, peptide_clause)
             data["proteins"] = get_proteins(cur, protein_clause)
             data["xiNETLayout"] = get_layout(cur, uuid)
@@ -236,17 +236,19 @@ def get_resultset_search_metadata(cur, uuid):
     return resultset_meta, searches
 
 
-def get_matches(cur, uuid):
+def get_matches(cur, uuid, main_score_index):
     # todo - the join to matchedspectrum for cleavable crosslinker - needs a GROUP BY match_id?'
-    sql = """select m.id, m.pep1_id, m.pep2_id, m.site1, m.site2, m.score, m.crosslinker_id,
+    sql = """SELECT m.id, m.pep1_id, m.pep2_id, m.site1, m.site2, rm.scores[%s], m.crosslinker_id,
                     m.search_id, m.calc_mass, m.assumed_prec_charge, m.assumed_prec_mz,
                     ms.spectrum_id
-                from ResultMatch as rm
+                FROM ResultMatch as rm
                     JOIN match as m on rm.match_id = m.id
                     JOIN matchedspectrum as ms ON rm.match_id = ms.match_id
-                    where rm.resultset_id = %s AND m.site1 >0 AND m.site2 >0
-                   """
-    cur.execute(sql, [uuid])
+                    WHERE rm.resultset_id = %s AND m.site1 >0 AND m.site2 >0
+                    """
+    #                AND rm.top_ranking = True;
+
+    cur.execute(sql, [main_score_index, uuid])
     matches = []
     search_peptide_ids = {}
     while True:
