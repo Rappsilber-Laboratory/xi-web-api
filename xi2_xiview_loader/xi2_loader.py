@@ -210,7 +210,7 @@ def get_resultset_search_metadata(cur, uuid):
                   LEFT JOIN resultsettype as rst on (rs.rstype_id = rst.id)
                   LEFT JOIN ResultSearch as result_search on (rs.id = result_search.resultset_id)
                   LEFT JOIN Search as s on (result_search.search_id = s.id)
-                where rs.id = %s
+                WHERE rs.id = %s
                            """
     cur.execute(sql, [uuid])
     resultset_meta_cur = cur.fetchall()
@@ -245,8 +245,7 @@ def get_matches(cur, uuid, main_score_index):
                     JOIN match as m on rm.match_id = m.id
                     JOIN matchedspectrum as ms ON rm.match_id = ms.match_id
                     WHERE rm.resultset_id = %s AND m.site1 >0 AND m.site2 >0
-                    """
-    #                AND rm.top_ranking = True;
+                    AND rm.top_ranking = TRUE;"""
 
     cur.execute(sql, [main_score_index, uuid])
     matches = []
@@ -312,84 +311,86 @@ def get_matches(cur, uuid, main_score_index):
 
 
 def get_peptides(cur, peptide_clause):
-    sql = """select mp.id, (array_agg(mp.search_id))[1] as search_uuid,
-                            (array_agg(mp.sequence))[1] as sequence,
-                            array_agg(pp.protein_id) as proteins,
-                            array_agg(pp.start) as positions
-                                from modifiedpeptide as mp
-                                JOIN peptideposition as pp
-                                ON mp.id = pp.mod_pep_id AND mp.search_id = pp.search_id
-                            where """ + peptide_clause + """ GROUP BY mp.id, mp.search_id
-                           """
-    # print(sql);
-    cur.execute(sql)
-    peptides = []
-    search_protein_ids = {}
-    while True:
-        peptide_rows = cur.fetchmany(5000)
-        if not peptide_rows:
-            break
-        for peptide_row in peptide_rows:
-            search_id = peptide_row[1]
-            prots = peptide_row[3]
-            peptide = {
-                "id": peptide_row[0],
-                "seq_mods": peptide_row[2],
-                "prt": prots,
-                "pos": peptide_row[4]
-            }
-            if search_id in search_protein_ids:
-                protein_ids = search_protein_ids[search_id]
+    if peptide_clause != "()":
+        sql = """select mp.id, (array_agg(mp.search_id))[1] as search_uuid,
+                                (array_agg(mp.sequence))[1] as sequence,
+                                array_agg(pp.protein_id) as proteins,
+                                array_agg(pp.start) as positions
+                                    from modifiedpeptide as mp
+                                    JOIN peptideposition as pp
+                                    ON mp.id = pp.mod_pep_id AND mp.search_id = pp.search_id
+                                where """ + peptide_clause + """ GROUP BY mp.id, mp.search_id
+                               """
+        # print(sql);
+        cur.execute(sql)
+        peptides = []
+        search_protein_ids = {}
+        while True:
+            peptide_rows = cur.fetchmany(5000)
+            if not peptide_rows:
+                break
+            for peptide_row in peptide_rows:
+                search_id = peptide_row[1]
+                prots = peptide_row[3]
+                peptide = {
+                    "id": peptide_row[0],
+                    "seq_mods": peptide_row[2],
+                    "prt": prots,
+                    "pos": peptide_row[4]
+                }
+                if search_id in search_protein_ids:
+                    protein_ids = search_protein_ids[search_id]
+                else:
+                    protein_ids = set()
+                    search_protein_ids[search_id] = protein_ids
+
+                for prot in prots:
+                    protein_ids.add(prot)
+
+                peptides.append(peptide)
+
+        # create sql clause that selects proteins by id and resultset
+        # (search_id = a AND id in(x,y,z)) OR (search_id = b AND (...)) OR ...
+        first_search = True
+        protein_clause = "("
+        for k, v in search_protein_ids.items():
+            if first_search:
+                first_search = False
             else:
-                protein_ids = set()
-                search_protein_ids[search_id] = protein_ids
+                protein_clause += " OR "
+            protein_clause += "(search_id = '" + str(search_id) + "' AND id in ("
+            first_prot_id = True
+            for prot_id in v:
+                if first_prot_id:
+                    first_prot_id = False
+                else:
+                    protein_clause += ","
+                protein_clause += str(prot_id)
+            protein_clause += "))"
 
-            for prot in prots:
-                protein_ids.add(prot)
-
-            peptides.append(peptide)
-
-    # create sql clause that selects proteins by id and resultset
-    # (search_id = a AND id in(x,y,z)) OR (search_id = b AND (...)) OR ...
-    first_search = True
-    protein_clause = "("
-    for k, v in search_protein_ids.items():
-        if first_search:
-            first_search = False
-        else:
-            protein_clause += " OR "
-        protein_clause += "(search_id = '" + str(search_id) + "' AND id in ("
-        first_prot_id = True
-        for prot_id in v:
-            if first_prot_id:
-                first_prot_id = False
-            else:
-                protein_clause += ","
-            protein_clause += str(prot_id)
-        protein_clause += "))"
-
-    return peptides, protein_clause
+        return peptides, protein_clause
 
 
 def get_proteins(cur, protein_clause):
-    sql = """SELECT id, name, accession, sequence, search_id, is_decoy FROM protein
-                            WHERE """ + protein_clause + """)
-                            """
-    # print(sql);
-    cur.execute(sql)
-    protein_rows = cur.fetchall()
-    proteins = []
-    for protein_row in protein_rows:
-        protein = {
-            "id": protein_row[0],
-            "name": protein_row[1],
-            "accession": protein_row[2],
-            "sequence": protein_row[3],
-            "search_id": protein_row[4],
-            "is_decoy": protein_row[5]
-        }
-        proteins.append(protein)
-    return proteins
+    if protein_clause != "()":
+        sql = """SELECT id, name, accession, sequence, search_id, is_decoy FROM protein
+                                WHERE """ + protein_clause + """)
+                                """
+        # print(sql);
+        cur.execute(sql)
+        protein_rows = cur.fetchall()
+        proteins = []
+        for protein_row in protein_rows:
+            protein = {
+                "id": protein_row[0],
+                "name": protein_row[1],
+                "accession": protein_row[2],
+                "sequence": protein_row[3],
+                "search_id": protein_row[4],
+                "is_decoy": protein_row[5]
+            }
+            proteins.append(protein)
+        return proteins
 
 
 def get_layout(cur, uuid):
