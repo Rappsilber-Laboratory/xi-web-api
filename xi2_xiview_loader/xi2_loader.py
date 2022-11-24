@@ -238,7 +238,10 @@ def get_resultset_search_metadata(cur, uuid):
 
 def get_matches(cur, uuid, main_score_index):
     # todo - the join to matchedspectrum for cleavable crosslinker - needs a GROUP BY match_id?'
-    sql = """SELECT m.id, m.pep1_id, m.pep2_id, m.site1, m.site2, rm.scores[%s], m.crosslinker_id,
+    sql = """SELECT m.id, m.pep1_id, m.pep2_id, 
+                    CASE WHEN rm.site1 IS NOT NULL THEN rm.site1 ELSE m.site1 END, 
+                    CASE WHEN rm.site2 IS NOT NULL THEN rm.site2 ELSE m.site2 END, 
+                    rm.scores[%s], m.crosslinker_id,
                     m.search_id, m.calc_mass, m.assumed_prec_charge, m.assumed_prec_mz,
                     ms.spectrum_id
                 FROM ResultMatch AS rm
