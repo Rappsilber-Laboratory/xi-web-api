@@ -315,14 +315,14 @@ def get_matches(cur, uuid, main_score_index):
 
 def get_peptides(cur, peptide_clause):
     if peptide_clause != "()":
-        sql = """SELECT mp.id, (array_agg(mp.search_id))[1] AS search_uuid,
-                                (array_agg(mp.sequence))[1] AS sequence,
+        sql = """SELECT mp.id, (mp.search_id AS search_uuid,
+                                mp.sequence AS sequence,
                                 array_agg(pp.protein_id) AS proteins,
                                 array_agg(pp.start) AS positions
                                     FROM modifiedpeptide AS mp
                                     JOIN peptideposition AS pp
                                     ON mp.id = pp.mod_pep_id AND mp.search_id = pp.search_id
-                                WHERE """ + peptide_clause + """ GROUP BY mp.id, mp.search_id
+                                WHERE """ + peptide_clause + """ GROUP BY mp.id, mp.search_id, mp.sequence
                                """
         # print(sql);
         cur.execute(sql)
