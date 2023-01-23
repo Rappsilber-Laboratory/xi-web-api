@@ -1,7 +1,8 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template, request, make_response
 from flask_cors import CORS
 import psycopg2  # todo - use sqlalchemy instead? LK: There's also flask_sqlalchemy
 import json
+import re
 from configparser import ConfigParser
 
 
@@ -11,7 +12,7 @@ def create_app(config='database.ini'):
 
     :return: flask app
     """
-    app = Flask(__name__, static_url_path="", static_folder='../static')
+    app = Flask(__name__, static_url_path="", static_folder='../static', template_folder='../templates')
 
     # Load flask config
     if app.env == 'development':
@@ -25,13 +26,6 @@ def create_app(config='database.ini'):
 
     # add CORS header
     CORS(app)
-
-    # CORS(app, resources={
-    #     r"/get_data": {
-    #         "origins": "*",
-    #         "headers": app.config['CORS_HEADERS']
-    #     }
-    # })
 
     # https://www.postgresqltutorial.com/postgresql-python/connect/
     def parse_database_info(filename, section='postgresql'):
@@ -54,90 +48,160 @@ def create_app(config='database.ini'):
     # read connection information
     db_info = parse_database_info(config)
 
+    @app.route('/', methods=['GET'])
+    def index():
+        datasets = get_datasets()
+        return render_template("datasets.html", datasets=datasets)
+
+    def get_datasets():
+        """ Connect to the PostgreSQL database server """
+        conn = None
+        data = {}
+        try:
+            # connect to the PostgreSQL server
+            print('Connecting to the PostgreSQL database...')
+            conn = psycopg2.connect(**db_info)
+
+            # create a cursor
+            cur = conn.cursor()
+
+            sql = """SELECT px_accession FROM upload GROUP BY px_accession;""" #   ORDER BY time_saved DESC;"""
+            print(sql);
+            cur.execute(sql)
+            ds_rows = cur.fetchall()
+            print("finished")
+            # close the communication with the PostgreSQL
+            cur.close()
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+        finally:
+            if conn is not None:
+                conn.close()
+                print('Database connection closed.')
+            return ds_rows
+
+    @app.route('/dataset', methods=['GET'])
+    def dataset():
+        pxid = request.args.get('pxid')
+        dataset = get_dataset(pxid)
+        return render_template("dataset.html", datasets=dataset)
+
+    def get_dataset(pxid):
+        """ Connect to the PostgreSQL database server """
+        conn = None
+        data = {}
+        try:
+            # connect to the PostgreSQL server
+            print('Connecting to the PostgreSQL database...')
+            conn = psycopg2.connect(**db_info)
+
+            # create a cursor
+            cur = conn.cursor()
+
+            sql = """SELECT identification_file_name, id FROM upload WHERE px_accession = %s;""" #   ORDER BY time_saved DESC;"""
+            print(sql);
+            cur.execute(sql, [pxid])
+            mzid_rows = cur.fetchall()
+            print("finished")
+            # close the communication with the PostgreSQL
+            cur.close()
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+        finally:
+            if conn is not None:
+                conn.close()
+                print('Database connection closed.')
+            return mzid_rows
+
     @app.route('/get_data', methods=['GET'])
     def get_data():
-        uuid = request.args.get('uuid')  # uuid of search
-        return jsonify(get_data_object(uuid))
+        uuid = request.args.get('id')  # id(s) of data set(s)
+        #regex for alphanumeric characters, underscore, comma or hyphen
+        if not re.match(r'^[a-zA-Z0-9,-]+$', uuid):
+            return jsonify({"error": "Invalid id(s)"}), 400
+
+        # return json.dumps(get_data_object(uuid)) # think this will be more efficient as it doesn't pretty print
+        return jsonify(get_data_object(uuid))  # this is more readable for debugging
 
     @app.route('/get_peaklist', methods=['GET'])
     def get_peaklist():
-        uuid = request.args.get('uuid')
+        uuid = request.args.get('id')
         return jsonify(get_peaklist_object(uuid))
 
-    @app.route('/save_layout', methods=['POST'])
-    def save_layout():
-        uuid = request.form['uuid']
-        layout = request.form['layout']
-        description = request.form['name']
-
-        try:
-            # connect to the PostgreSQL server
-            print('Connecting to the PostgreSQL database...')
-            conn = psycopg2.connect(**db_info)
-
-            # create a cursor
-            cur = conn.cursor()
-
-            sql = "INSERT INTO layout (resultset_id, layout, description) VALUES (%s, %s, %s)"
-
-            cur.execute(sql, [uuid, layout, description])
-            conn.commit()
-
-            print("finished")
-            # close the communication with the PostgreSQL
-            cur.close()
-            return "Layout saved!"
-        except (Exception, psycopg2.DatabaseError) as error:
-            print(error)
-            return "Database error:\n" + str(error)
-        finally:
-            if conn is not None:
-                conn.close()
-                print('Database connection closed.')
-
-    @app.route('/load_layout', methods=['POST'])
-    def load_layout():
-        # actually returns all different layouts available
-        uuid = request.form['uuid']
-
-        try:
-            # connect to the PostgreSQL server
-            print('Connecting to the PostgreSQL database...')
-            conn = psycopg2.connect(**db_info)
-
-            # create a cursor
-            cur = conn.cursor()
-
-            sql = """SELECT t1.layout AS layout, t1.description AS name FROM layout AS t1 
-                  WHERE t1.resultset_id = %s AND t1.time_saved IN 
-                  (SELECT max(t1.time_saved) FROM layout AS t1  WHERE t1.resultset_id = %s GROUP BY t1.description);"""
-            # sql = """SELECT t1.description, t1.layout FROM layout AS t1
-            #     WHERE t1.resultset_id = %s ORDER BY t1.time_saved desc LIMIT 1"""
-            cur.execute(sql, [uuid, uuid])
-            layouts = cur.fetchall()
-            data = {}
-            # xinet_layout = {
-            #     "name": data[0],
-            #     "layout": data[1]
-            # }
-            for layout in layouts:
-                data[str(layout[1])] = layout[0]
-
-            print("finished")
-            # close the communication with the PostgreSQL
-            cur.close()
-            return jsonify(data)
-        except (Exception, psycopg2.DatabaseError) as error:
-            print(error)
-            return "Database error:\n" + str(error)
-        finally:
-            if conn is not None:
-                conn.close()
-                print('Database connection closed.')
+    # following doesn't look very secure
+    # @app.route('/save_layout', methods=['POST'])
+    # def save_layout():
+    #     uuid = request.form['uuid']
+    #     layout = request.form['layout']
+    #     description = request.form['name']
+    #
+    #     try:
+    #         # connect to the PostgreSQL server
+    #         print('Connecting to the PostgreSQL database...')
+    #         conn = psycopg2.connect(**db_info)
+    #
+    #         # create a cursor
+    #         cur = conn.cursor()
+    #
+    #         sql = "INSERT INTO layout (resultset_id, layout, description) VALUES (%s, %s, %s)"
+    #
+    #         cur.execute(sql, [uuid, layout, description])
+    #         conn.commit()
+    #
+    #         print("finished")
+    #         # close the communication with the PostgreSQL
+    #         cur.close()
+    #         return "Layout saved!"
+    #     except (Exception, psycopg2.DatabaseError) as error:
+    #         print(error)
+    #         return "Database error:\n" + str(error)
+    #     finally:
+    #         if conn is not None:
+    #             conn.close()
+    #             print('Database connection closed.')
+    #
+    # @app.route('/load_layout', methods=['POST'])
+    # def load_layout():
+    #     # actually returns all different layouts available
+    #     uuid = request.form['uuid']
+    #
+    #     try:
+    #         # connect to the PostgreSQL server
+    #         print('Connecting to the PostgreSQL database...')
+    #         conn = psycopg2.connect(**db_info)
+    #
+    #         # create a cursor
+    #         cur = conn.cursor()
+    #
+    #         sql = """SELECT t1.layout AS layout, t1.description AS name FROM layout AS t1
+    #               WHERE t1.resultset_id = %s AND t1.time_saved IN
+    #               (SELECT max(t1.time_saved) FROM layout AS t1  WHERE t1.resultset_id = %s GROUP BY t1.description);"""
+    #         # sql = """SELECT t1.description, t1.layout FROM layout AS t1
+    #         #     WHERE t1.resultset_id = %s ORDER BY t1.time_saved desc LIMIT 1"""
+    #         cur.execute(sql, [uuid, uuid])
+    #         layouts = cur.fetchall()
+    #         data = {}
+    #         # xinet_layout = {
+    #         #     "name": data[0],
+    #         #     "layout": data[1]
+    #         # }
+    #         for layout in layouts:
+    #             data[str(layout[1])] = layout[0]
+    #
+    #         print("finished")
+    #         # close the communication with the PostgreSQL
+    #         cur.close()
+    #         return jsonify(data)
+    #     except (Exception, psycopg2.DatabaseError) as error:
+    #         print(error)
+    #         return "Database error:\n" + str(error)
+    #     finally:
+    #         if conn is not None:
+    #             conn.close()
+    #             print('Database connection closed.')
 
     @app.route('/network.html', methods=['GET'])
     def network():
-        # uuid = request.args.get('uuid')
         return app.send_static_file('network.html')
 
     def get_data_object(uuid):
@@ -152,14 +216,12 @@ def create_app(config='database.ini'):
             # create a cursor
             cur = conn.cursor()
 
-            # i see... multiple return types, that's kind of cool,
-            # maybe a bit confusing the way I've used it here
             data["sid"] = uuid
-            data["resultset"], data["searches"] = get_resultset_search_metadata(cur, uuid)
-            data["matches"], peptide_clause = get_matches(cur, uuid, data["resultset"]["mainscore"])
+            # data["resultset"], data["searches"] = get_resultset_search_metadata(cur, uuid)
+            data["matches"], peptide_clause = get_matches(cur, uuid) #, data["resultset"]["mainscore"])
             data["peptides"], protein_clause = get_peptides(cur, peptide_clause)
             data["proteins"] = get_proteins(cur, protein_clause)
-            data["xiNETLayout"] = get_layout(cur, uuid)
+            # data["xiNETLayout"] = get_layout(cur, uuid)
 
             print("finished")
             # close the communication with the PostgreSQL
@@ -184,7 +246,7 @@ def create_app(config='database.ini'):
             # create a cursor
             cur = conn.cursor()
 
-            sql = "SELECT intensity, mz FROM spectrumpeaks WHERE id = %s"
+            sql = "SELECT intensity, mz FROM spectrum WHERE id = %s"
 
             cur.execute(sql, [spectrum_uuid])
             data = cur.fetchall()[0]
@@ -215,7 +277,7 @@ def get_resultset_search_metadata(cur, uuid):
     cur.execute(sql, [uuid])
     resultset_meta_cur = cur.fetchall()
     first_row = resultset_meta_cur[0]
-    # todo resultset.config in db, column is text but value is json
+
     resultset_meta = {
         "name": first_row[0],
         "note": first_row[1],
@@ -236,21 +298,23 @@ def get_resultset_search_metadata(cur, uuid):
     return resultset_meta, searches
 
 
-def get_matches(cur, uuid, main_score_index):
+def get_matches(cur, uuid):
     # todo - the join to matchedspectrum for cleavable crosslinker - needs a GROUP BY match_id?'
-    sql = """SELECT m.id, m.pep1_id, m.pep2_id, 
-                    CASE WHEN rm.site1 IS NOT NULL THEN rm.site1 ELSE m.site1 END, 
-                    CASE WHEN rm.site2 IS NOT NULL THEN rm.site2 ELSE m.site2 END, 
-                    rm.scores[%s], m.crosslinker_id,
-                    m.search_id, m.calc_mass, m.assumed_prec_charge, m.assumed_prec_mz,
-                    ms.spectrum_id
-                FROM ResultMatch AS rm
-                    JOIN match AS m ON rm.match_id = m.id
-                    JOIN matchedspectrum as ms ON rm.match_id = ms.match_id
-                    WHERE rm.resultset_id = %s AND m.site1 >0 AND m.site2 >0
-                    AND rm.top_ranking = TRUE;"""
+    # sql = """SELECT m.id, m.pep1_id, m.pep2_id,
+    #                 CASE WHEN rm.site1 IS NOT NULL THEN rm.site1 ELSE m.site1 END,
+    #                 CASE WHEN rm.site2 IS NOT NULL THEN rm.site2 ELSE m.site2 END,
+    #                 rm.scores[%s], m.crosslinker_id,
+    #                 m.search_id, m.calc_mass, m.assumed_prec_charge, m.assumed_prec_mz,
+    #                 ms.spectrum_id
+    #             FROM ResultMatch AS rm
+    #                 JOIN match AS m ON rm.match_id = m.id
+    #                 JOIN matchedspectrum as ms ON rm.match_id = ms.match_id
+    #                 WHERE rm.resultset_id = %s AND m.site1 >0 AND m.site2 >0
+    #                 AND rm.top_ranking = TRUE;"""
 
-    cur.execute(sql, [main_score_index, uuid])
+    sql = """SELECT * FROM spectrumidentification WHERE upload_id = %s;"""
+
+    cur.execute(sql, [uuid])
     matches = []
     search_peptide_ids = {}
     while True:
@@ -259,22 +323,25 @@ def get_matches(cur, uuid, main_score_index):
             break
 
         for match_row in match_rows:
-            peptide1_id = match_row[1]
-            peptide2_id = match_row[2]
-            search_id = match_row[7]
+            peptide1_id = match_row[5]
+            peptide2_id = match_row[6]
+            search_id = match_row[1]
             match = {
                 "id": match_row[0],
                 "pi1": peptide1_id,
                 "pi2": peptide2_id,
-                "s1": match_row[3],
-                "s2": match_row[4],
-                "sc": match_row[5],
-                "cl": match_row[6],
+                # "s1": match_row[],
+                # "s2": match_row[],
+                "sc": match_row[10],  # scores
+                # "cl": match_row[],
                 "si": search_id,
-                "cm": match_row[8],
-                "pc_c": match_row[9],
-                "pc_mz": match_row[10],
-                "sp_id": match_row[11]
+                "cm": match_row[12],
+                "pc_c": match_row[7],
+                "pc_mz": match_row[11], # experimental mz
+                "sp_id": match_row[2],
+                "sd_ref": match_row[3],  # spectra data ref
+                "pass": match_row[8], # pass threshold
+                "r": match_row[9], # rank
             }
             if search_id in search_peptide_ids:
                 peptide_ids = search_peptide_ids[search_id]
@@ -297,7 +364,8 @@ def get_matches(cur, uuid, main_score_index):
             first_search = False
         else:
             peptide_clause += " OR "
-        peptide_clause += "(mp.search_id = '" + str(search_id) + "' AND mp.id IN ("
+        # todo - looks like this should be protected against sql injection
+        peptide_clause += "(mp.upload_id = '" + str(search_id) + "' AND mp.id IN ('"
         # print("rs:" + str(k))
         first_pep_id = True
         for pep_id in v:
@@ -305,9 +373,9 @@ def get_matches(cur, uuid, main_score_index):
             if first_pep_id:
                 first_pep_id = False
             else:
-                peptide_clause += ","
+                peptide_clause += "','"
             peptide_clause += str(pep_id)
-        peptide_clause += "))"
+        peptide_clause += "'))"
     peptide_clause += ")"
 
     return matches, peptide_clause
@@ -315,15 +383,16 @@ def get_matches(cur, uuid, main_score_index):
 
 def get_peptides(cur, peptide_clause):
     if peptide_clause != "()":
-        sql = """SELECT mp.id, (array_agg(mp.search_id))[1] AS search_uuid,
-                                (array_agg(mp.sequence))[1] AS sequence,
-                                array_agg(pp.protein_id) AS proteins,
-                                array_agg(pp.start) AS positions
+        sql = """SELECT mp.id, mp.upload_id AS search_uuid,
+                                mp.base_sequence AS sequence,
+                                array_agg(pp.dbsequence_ref) AS proteins,
+                                array_agg(pp.pep_start) AS positions,
+                                array_agg(pp.is_decoy) AS decoys,
+                                mp.link_site1
                                     FROM modifiedpeptide AS mp
-                                    JOIN peptideposition AS pp
-                                    ON mp.id = pp.mod_pep_id AND mp.search_id = pp.search_id
-                                WHERE """ + peptide_clause + """ GROUP BY mp.id, mp.search_id
-                               """
+                                    JOIN peptideevidence AS pp
+                                    ON mp.id = pp.peptide_ref AND mp.upload_id = pp.upload_id
+                                WHERE """ + peptide_clause + """ GROUP BY mp.id, mp.upload_id, mp.base_sequence;"""
         # print(sql);
         cur.execute(sql)
         peptides = []
@@ -337,9 +406,12 @@ def get_peptides(cur, peptide_clause):
                 prots = peptide_row[3]
                 peptide = {
                     "id": peptide_row[0],
-                    "seq_mods": peptide_row[2],
+                    "u_id": peptide_row[1],
+                    "base_seq": peptide_row[2],
                     "prt": prots,
-                    "pos": peptide_row[4]
+                    "pos": peptide_row[4],
+                    "is_decoy": peptide_row[5],
+                    "linkSite": peptide_row[6]
                 }
                 if search_id in search_protein_ids:
                     protein_ids = search_protein_ids[search_id]
@@ -361,25 +433,24 @@ def get_peptides(cur, peptide_clause):
                 first_search = False
             else:
                 protein_clause += " OR "
-            protein_clause += "(search_id = '" + str(search_id) + "' AND id IN ("
+            protein_clause += "(upload_id = '" + str(search_id) + "' AND id IN ('"
             first_prot_id = True
             for prot_id in v:
                 if first_prot_id:
                     first_prot_id = False
                 else:
-                    protein_clause += ","
+                    protein_clause += "','"
                 protein_clause += str(prot_id)
-            protein_clause += "))"
-
+            protein_clause += "'))"
+        protein_clause += ")"
         return peptides, protein_clause
 
 
 def get_proteins(cur, protein_clause):
     if protein_clause != "()":
-        sql = """SELECT id, name, accession, sequence, search_id, is_decoy FROM protein
-                                WHERE """ + protein_clause + """)
-                                """
-        # print(sql);
+        sql = """SELECT id, name, accession, sequence, upload_id, description  FROM dbsequence WHERE """ \
+              + protein_clause + """;"""
+        print(sql);
         cur.execute(sql)
         protein_rows = cur.fetchall()
         proteins = []
@@ -390,7 +461,7 @@ def get_proteins(cur, protein_clause):
                 "accession": protein_row[2],
                 "sequence": protein_row[3],
                 "search_id": protein_row[4],
-                "is_decoy": protein_row[5]
+                "description": protein_row[5]
             }
             proteins.append(protein)
         return proteins
