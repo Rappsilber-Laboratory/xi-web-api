@@ -57,6 +57,11 @@ def create_app(config='database.ini'):
     @app.route('/get_data', methods=['GET'])
     def get_data():
         uuid = request.args.get('uuid')  # uuid of search
+        # quit if uuid contains char that isn't alphanumeric, comma or hyphen
+        if not re.match(r'^[a-zA-Z0-9,-]+$', uuid):
+            return jsonify({"error": "Invalid id(s)"}), 400
+
+        # return json.dumps(get_data_object(uuid)) # think this will be more efficient as it doesn't pretty print
         return jsonify(get_data_object(uuid))
 
     @app.route('/get_peaklist', methods=['GET'])
