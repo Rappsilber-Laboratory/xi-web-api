@@ -116,7 +116,7 @@ def create_app(config='database.ini'):
     @app.route('/get_data', methods=['GET'])
     def get_data():
         uuid = request.args.get('id')  # id(s) of data set(s)
-        #regex for alphanumeric characters, underscore, comma or hyphen
+        # quit if uuid contains char that isn't alphanumeric, comma or hyphen
         if not re.match(r'^[a-zA-Z0-9,-]+$', uuid):
             return jsonify({"error": "Invalid id(s)"}), 400
 

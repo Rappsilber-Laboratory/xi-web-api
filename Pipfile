@@ -6,7 +6,8 @@ name = "pypi"
 [packages]
 flask = "*"
 flask_cors = "*"
-psycopg2 = "*"
+psycopg2-binary = "*"
+# psycopg2 = "*"
 python-dotenv = "*"
 waitress = "*"
 
