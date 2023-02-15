@@ -3,6 +3,7 @@ from flask_cors import CORS
 import psycopg2  # todo - use sqlalchemy instead? LK: There's also flask_sqlalchemy
 import json
 from configparser import ConfigParser
+import re
 
 
 def create_app(config='database.ini'):
