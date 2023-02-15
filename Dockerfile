@@ -11,26 +11,23 @@ ENV FLASK_ENV development
 RUN python3 -m pip install wheel pip --upgrade && pip install pipenv
 RUN apt-get update && apt-get install
 
-# Install python dependencies in /.venv
 COPY Pipfile .
 COPY Pipfile.lock .
 RUN PIPENV_VENV_IN_PROJECT=1 pipenv install --system
 
-
-##
-#FROM base AS runtime
-##
-### Copy virtual env from python-deps stage
-#COPY --from=python-deps /.venv /.venv
-#ENV PATH="/.venv/bin:$PATH"
-
 # Create and switch to a new user to ensure security
-#RUN useradd --create-home appuser
-#WORKDIR /home/appuser
-#USER appuser
+RUN useradd --create-home appuser
+WORKDIR /home/appuser
+USER appuser
 
 # Install application into container
-COPY .. .
+COPY static ./static
+COPY templates ./templates
+COPY tests ./tests
+COPY xi2_xiview_loader ./xi2_xiview_loader
+COPY .env .
+COPY default.database.ini .
+COPY .kubernetes.yml .
 
 #FROM base AS production
 # Run the application

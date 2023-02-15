@@ -73,6 +73,7 @@ spec:
     - protocol: TCP
       port: $port
       targetPort: $port
+      nodePort: $node_port
   type: NodePort
 #---
 #apiVersion: apps/v1
