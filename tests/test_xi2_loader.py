@@ -12,9 +12,9 @@ def app():
     return app
 
 
-def test_general(client, config):
+def test_no_uuid(client, config):
+    """Test that the API returns a 400 if no uuid is provided"""
     url = url_for('get_data')
-    # GET allowed
-    assert client.get(url)._status_code == 200
+    assert client.get(url)._status_code == 400
     # check cors headers
     assert config['CORS_HEADERS'] == 'Content-Type'
