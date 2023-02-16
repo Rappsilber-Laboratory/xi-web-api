@@ -2,6 +2,7 @@ variables:
   DOCKER_PULL_SECRET: pride-gitlab-docker-secret
   IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA
   CONFIG_INI: configmap
+  CI_DEBUG_TRACE: "true"
 
 docker_build:
   image: docker:18.09
