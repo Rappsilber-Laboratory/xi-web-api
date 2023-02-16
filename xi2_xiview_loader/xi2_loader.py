@@ -323,6 +323,8 @@ def get_peptides(cur, peptide_clause):
     if peptide_clause != "()":
         sql = """SELECT mp.id, mp.search_id AS search_uuid,
                                 mp.sequence AS sequence,
+                                mp.modification_ids AS mod_ids,
+                                mp.modification_position AS mod_positions,
                                 array_agg(pp.protein_id) AS proteins,
                                 array_agg(pp.start) AS positions
                                     FROM modifiedpeptide AS mp
@@ -340,12 +342,14 @@ def get_peptides(cur, peptide_clause):
                 break
             for peptide_row in peptide_rows:
                 search_id = peptide_row[1]
-                prots = peptide_row[3]
+                prots = peptide_row[5]
                 peptide = {
                     "id": peptide_row[0],
                     "seq_mods": peptide_row[2],
+                    "mod_ids": peptide_row[3],
+                    "mod_pos": peptide_row[4],
                     "prt": prots,
-                    "pos": peptide_row[4]
+                    "pos": peptide_row[6]
                 }
                 if search_id in search_protein_ids:
                     protein_ids = search_protein_ids[search_id]
