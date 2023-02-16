@@ -37,7 +37,7 @@ kube_deploy_prod_ec:
     - kubectl config get-contexts
     - kubectl create namespace $k8s_namespace || true
     - kubectl -n $k8s_namespace delete secret $DOCKER_PULL_SECRET || true
-    - kubectl -n $k8s_namespace create secret docker-registry $DOCKER_PULL_SECRET --docker-server=$CI_REGISTRY --docker-username=$CI_DEPLOY_USER --docker-password=$CI_DEPLOY_PASSWORD
+    - kubectl -n $k8s_namespace create secret docker-registry $DOCKER_PULL_SECRET --docker-server=$CI_REGISTRY --docker-username=$CI_REGISTRY_USER --docker-password=$CI_REGISTRY_PASSWORD
     - envsubst < default.database.ini > database.ini
     # create configmap for first time
     - kubectl -n $k8s_namespace create configmap $CONFIG_INI --from-file=database.ini || true
