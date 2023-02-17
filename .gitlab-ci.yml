@@ -1,7 +1,7 @@
 variables:
   DOCKER_PULL_SECRET: pride-gitlab-docker-secret
   IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA
-  CONFIG_INI: configmap
+  CONFIG_INI: application-db-config
   CI_DEBUG_TRACE: "true"
 
 docker_build:
