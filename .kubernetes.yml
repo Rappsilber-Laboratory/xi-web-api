@@ -22,45 +22,19 @@ spec:
     spec:
       imagePullSecrets:
         - name: $DOCKER_PULL_SECRET
-#      volumes:
-#        - name: logvolume
-#          persistentVolumeClaim:
-#            claimName: $log_volume_pvc
-#        - name: application-config
-#          configMap:
-#            name: $SPRING_CONFIG_MAP
-#            items:
-#              - key: application.yml
-#                path: application.yml
+      volumes:
+        - name: application-db-config
+          configMap:
+            name: application-db-config
+            items:
+              - key: database.ini
+                path: database.ini
       containers:
         - name: $app_name
           image: $IMAGE
           imagePullPolicy: Always
           ports:
             - containerPort: $port
-#          env:
-#            - name: APM_AGENT_OPTS
-#              value: "-javaagent:${APM_AGENT_JAR} -Delastic.apm.service_name=${app_name} -Delastic.apm.application_packages=${APM_PACKAGE} -Delastic.apm.server_urls=${APM_SERVER}"
-#          volumeMounts:
-#            - name: application-config
-#              mountPath: "/app/config/"
-#              readOnly: true
-#            - name: logvolume
-#              mountPath: $logspath
-#          livenessProbe:
-#            httpGet:
-#              path: $contextPath/actuator/health
-#              port: $port
-#            initialDelaySeconds: 60
-#            periodSeconds: 10
-#            timeoutSeconds: 120
-#          readinessProbe:
-#            httpGet:
-#              path: $contextPath/actuator/health
-#              port: $port
-#            initialDelaySeconds: 60
-#            periodSeconds: 10
-#            timeoutSeconds: 120
 ---
 apiVersion: v1
 kind: Service
@@ -75,56 +49,3 @@ spec:
       targetPort: $port
       nodePort: $node_port
   type: NodePort
-#---
-#apiVersion: apps/v1
-#kind: Deployment
-#metadata:
-#  name: $app_name-filebeat
-#  labels:
-#    app: $app_name-filebeat
-#spec:
-#  replicas: 1
-#  revisionHistoryLimit: 0
-#  selector:
-#    matchLabels:
-#      app: $app_name-filebeat
-#  strategy:
-#    type: RollingUpdate
-#    rollingUpdate:
-#      maxSurge: 1
-#      maxUnavailable: 25%
-#  template:
-#    metadata:
-#      labels:
-#        app: $app_name-filebeat
-#    spec:
-#      volumes:
-#        - name: logvolume
-#          persistentVolumeClaim:
-#            claimName: $log_volume_pvc
-#        - name: filebeat-config
-#          configMap:
-#            name: $FILEBEAT_CONFIG_MAP
-#            items:
-#              - key: filebeat.yml
-#                path: filebeat.yml
-#      containers:
-#        - name: $app_name-filebeat
-#          image: docker.elastic.co/beats/filebeat:7.8.0
-#          env:
-#            - name: POD_NAMESPACE
-#              valueFrom:
-#                fieldRef:
-#                  apiVersion: v1
-#                  fieldPath: metadata.namespace
-#            - name: NODE_NAME
-#              valueFrom:
-#                fieldRef:
-#                  apiVersion: v1
-#                  fieldPath: spec.nodeName
-#          volumeMounts:
-#            - name: logvolume
-#              mountPath: $logspath
-#            - name: filebeat-config
-#              mountPath: /usr/share/filebeat/filebeat.yml
-#              subPath: filebeat.yml
