@@ -25,7 +25,7 @@ spec:
       volumes:
         - name: application-db-config
           configMap:
-            name: application-db-config
+            name: $DATABASE_INI
             items:
               - key: database.ini
                 path: database.ini
@@ -35,6 +35,12 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: $port
+          volumeMounts:
+            - name: application-db-config
+              mountPath: /home/appuser/database.ini
+              subPath: database.ini
+              readOnly: true
+
 ---
 apiVersion: v1
 kind: Service
