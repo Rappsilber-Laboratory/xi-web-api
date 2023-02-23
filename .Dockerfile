@@ -5,7 +5,7 @@ ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONFAULTHANDLER 1
-ENV FLASK_ENV development
+ENV FLASK_ENV production
 
 # Install pipenv and compilation dependencies
 RUN python3 -m pip install wheel pip --upgrade && pip install pipenv
