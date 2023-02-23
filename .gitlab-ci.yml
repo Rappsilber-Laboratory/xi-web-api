@@ -12,7 +12,7 @@ docker_build:
     - apk add --update bash gettext tzdata coreutils ca-certificates wget
     - update-ca-certificates
     - ls
-    - envsubst '${PREFIX_URL} ${PORT} ${APP_ENTRY}' < .Dockerfile > Dockerfile
+    - envsubst '${PORT} ${URL_PREFIX} ${APP_ENTRY}' < .Dockerfile > Dockerfile
     - cat Dockerfile
     - docker info
     - docker build -t $IMAGE .
