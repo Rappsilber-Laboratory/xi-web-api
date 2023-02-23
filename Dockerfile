@@ -31,4 +31,5 @@ COPY .kubernetes.yml .
 
 #FROM base AS production
 # Run the application
-CMD ["python" ,"-m" ,"flask", "run","--host=0.0.0.0"]
+#CMD ["python" ,"-m" ,"flask", "run","--host=0.0.0.0"]
+CMD ["waitress-serve", "--port", "8080", "--call", "xi2_xiview_loader.xi2_loader:create_app"]
