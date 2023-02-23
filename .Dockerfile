@@ -32,4 +32,4 @@ COPY .kubernetes.yml .
 #FROM base AS production
 # Run the application
 #CMD ["python" ,"-m" ,"flask", "run","--host=0.0.0.0"]
-ENTRYPOINT waitress-serve --port ${PORT} --url-prefix ${PREFIX_URL} --call ${APP_ENTRY}
+ENTRYPOINT waitress-serve --port ${PORT} --url-prefix ${URL_PREFIX} --call ${APP_ENTRY}
