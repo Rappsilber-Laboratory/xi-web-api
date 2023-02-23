@@ -32,5 +32,4 @@ COPY .kubernetes.yml .
 #FROM base AS production
 # Run the application
 #CMD ["python" ,"-m" ,"flask", "run","--host=0.0.0.0"]
-#CMD ["waitress-serve", "--port", "5000", "--url-prefix", "pride/archive/xiview", "--call", "xi2_xiview_loader.xi2_loader:create_app"]
 ENTRYPOINT waitress-serve --port ${PORT} --url-prefix ${PREFIX_URL} --call ${APP_ENTRY}
