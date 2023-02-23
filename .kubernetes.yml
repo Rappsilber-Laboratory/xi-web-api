@@ -34,7 +34,7 @@ spec:
           image: $IMAGE
           imagePullPolicy: Always
           ports:
-            - containerPort: $port
+            - containerPort: $PORT
           volumeMounts:
             - name: application-db-config
               mountPath: /home/appuser/database.ini
@@ -51,7 +51,7 @@ spec:
     app: $app_name
   ports:
     - protocol: TCP
-      port: $port
-      targetPort: $port
+      port: $PORT
+      targetPort: $PORT
       nodePort: $node_port
   type: NodePort
