@@ -3,10 +3,12 @@ from flask_cors import CORS
 import psycopg2  # todo - use sqlalchemy instead? LK: There's also flask_sqlalchemy
 import json
 import re
+import os
 from configparser import ConfigParser
+from pathlib import Path
 
 
-def create_app(config='database.ini'):
+def create_app():
     """
     Create the flask app.
 
@@ -45,8 +47,13 @@ def create_app(config='database.ini'):
 
         return db
 
+    path = os.path.dirname(os.path.abspath(__file__))
+    configPath = os.path.join(Path(path).parent.absolute(), "database.ini")
     # read connection information
-    db_info = parse_database_info(config)
+    if os.path.isfile(configPath):
+        db_info = parse_database_info(configPath)
+    else:
+        raise Exception('Database configuration file not found: {0}'.format(configPath))
 
     @app.route('/', methods=['GET'])
     def index():
@@ -112,6 +119,17 @@ def create_app(config='database.ini'):
                 conn.close()
                 print('Database connection closed.')
             return mzid_rows
+
+    @app.route('/visualisations', methods=['GET'])
+    def visualisations():
+        pxid = request.args.get('pxid')
+        dataset = get_dataset(pxid)
+        datafile = {}
+        for record in dataset:
+            datafile["filename"] = record[0]
+            datafile["visualisation"] = "cross-linking"
+            datafile["link"] = request.base_url[:request.base_url.rfind('/')] + "/network.html?id=" + record[1]
+        return json.dumps(datafile)
 
     @app.route('/get_data', methods=['GET'])
     def get_data():
