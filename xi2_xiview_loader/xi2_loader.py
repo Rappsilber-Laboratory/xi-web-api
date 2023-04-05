@@ -6,7 +6,32 @@ import re
 from configparser import ConfigParser
 
 
-def create_app(config='database.ini'):
+def get_db_connection(config='database.ini'):
+    # https://www.postgresqltutorial.com/postgresql-python/connect/
+    def parse_database_info(filename, section='postgresql'):
+        # create a parser
+        parser = ConfigParser()
+        # read config file
+        parser.read(filename)
+
+        # get section, default to postgresql
+        db = {}
+        if parser.has_section(section):
+            params = parser.items(section)
+            for param in params:
+                db[param[0]] = param[1]
+        else:
+            raise Exception('Section {0} not found in the {1} file'.format(section, filename))
+
+        return db
+    # read connection information
+    db_info = parse_database_info(config)
+    print('Connecting to the PostgreSQL database...')
+    conn = psycopg2.connect(**db_info)
+    return conn
+
+
+def create_app():
     """
     Create the flask app.
 
@@ -27,26 +52,8 @@ def create_app(config='database.ini'):
     # add CORS header
     CORS(app)
 
-    # https://www.postgresqltutorial.com/postgresql-python/connect/
-    def parse_database_info(filename, section='postgresql'):
-        # create a parser
-        parser = ConfigParser()
-        # read config file
-        parser.read(filename)
-
-        # get section, default to postgresql
-        db = {}
-        if parser.has_section(section):
-            params = parser.items(section)
-            for param in params:
-                db[param[0]] = param[1]
-        else:
-            raise Exception('Section {0} not found in the {1} file'.format(section, filename))
-
-        return db
-
-    # read connection information
-    db_info = parse_database_info(config)
+    from xi2_xiview_loader.pdbdev import bp as pdb_dev_bp
+    app.register_blueprint(pdb_dev_bp)
 
     @app.route('/', methods=['GET'])
     def index():
@@ -59,14 +66,13 @@ def create_app(config='database.ini'):
         data = {}
         try:
             # connect to the PostgreSQL server
-            print('Connecting to the PostgreSQL database...')
-            conn = psycopg2.connect(**db_info)
+            conn = get_db_connection()
 
             # create a cursor
             cur = conn.cursor()
 
-            sql = """SELECT px_accession FROM upload GROUP BY px_accession;""" #   ORDER BY time_saved DESC;"""
-            print(sql);
+            sql = """SELECT project_id FROM upload GROUP BY project_id;""" #   ORDER BY time_saved DESC;"""
+            print(sql)
             cur.execute(sql)
             ds_rows = cur.fetchall()
             print("finished")
@@ -93,13 +99,13 @@ def create_app(config='database.ini'):
         try:
             # connect to the PostgreSQL server
             print('Connecting to the PostgreSQL database...')
-            conn = psycopg2.connect(**db_info)
+            conn = get_db_connection()
 
             # create a cursor
             cur = conn.cursor()
 
-            sql = """SELECT identification_file_name, id FROM upload WHERE px_accession = %s;""" #   ORDER BY time_saved DESC;"""
-            print(sql);
+            sql = """SELECT identification_file_name, id FROM upload WHERE project_id = %s;""" #   ORDER BY time_saved DESC;"""
+            print(sql)
             cur.execute(sql, [pxid])
             mzid_rows = cur.fetchall()
             print("finished")
@@ -210,8 +216,7 @@ def create_app(config='database.ini'):
         data = {}
         try:
             # connect to the PostgreSQL server
-            print('Connecting to the PostgreSQL database...')
-            conn = psycopg2.connect(**db_info)
+            conn = get_db_connection()
 
             # create a cursor
             cur = conn.cursor()
@@ -240,8 +245,7 @@ def create_app(config='database.ini'):
         data = {}
         try:
             # connect to the PostgreSQL server
-            print('Connecting to the PostgreSQL database...')
-            conn = psycopg2.connect(**db_info)
+            conn = get_db_connection()
 
             # create a cursor
             cur = conn.cursor()
@@ -260,6 +264,86 @@ def create_app(config='database.ini'):
                 conn.close()
                 print('Database connection closed.')
             return data
+
+#     @app.route('/projects/<project_id>/sequences', methods=['GET'])
+#     def sequences(project_id):
+#         """
+#         Get all sequences belonging to a project.
+#
+#         :param project_id: identifier of a project, for ProteomeXchange projects this is the PXD****** accession
+#         :return: JSON object with all dbref id, mzIdentML file it came from and sequences
+#         """
+#         conn = None
+#         mzid_rows = []
+#         try:
+#             # connect to the PostgreSQL server and create a cursor
+#             print('Connecting to the PostgreSQL database...')
+#             conn = psycopg2.connect(**db_info)
+#             cur = conn.cursor(cursor_factory=RealDictCursor)
+#
+#
+#             sql = """SELECT s.id, u.identification_file_name, s.sequence
+#                         FROM upload AS u
+#                         JOIN dbsequence AS s ON u.id = s.upload_id
+#                      WHERE u.project_id = %s;"""
+#
+#             print(sql)
+#             cur.execute(sql, [project_id])
+#             mzid_rows = cur.fetchall()
+#
+#             print("finished")
+#             # close the communication with the PostgreSQL
+#             cur.close()
+#         except (Exception, psycopg2.DatabaseError) as error:
+#             print(error)
+#         finally:
+#             if conn is not None:
+#                 conn.close()
+#                 print('Database connection closed.')
+#             return jsonify(mzid_rows)
+#
+#     @app.route('/projects/<project_id>/residue-pairs/psm-level', methods=['GET'])
+#     def get_psm_level_residue_pairs(project_id):
+#         """
+#         Get all residue pairs (based on PSM level data) belonging to a project.
+#
+#         There will be multiple entries for identifications with positional uncertainty of peptide in protein sequences.
+#         :param project_id: identifier of a project, for ProteomeXchange projects this is the PXD****** accession
+#         :return:
+#         """
+#         conn = None
+#         mzid_rows = []
+#         try:
+#             # connect to the PostgreSQL server and create a cursor
+#             print('Connecting to the PostgreSQL database...')
+#             conn = psycopg2.connect(**db_info)
+#             cur = conn.cursor(cursor_factory=RealDictCursor)
+#
+#             sql = """WITH upload_ids AS (SELECT ID from upload WHERE project_id = %s)
+# SELECT si.id, u.identification_file_name,
+# si.pep1_id, /*pe1.pep_start as pep1_start, mp1.link_site1 as pep1_site,*/ pe1.dbsequence_ref as pep1_prot_id, (pe1.pep_start + mp1.link_site1 - 1) as abspos1,
+# si.pep2_id, /* pe2.pep_start as pep2_start, mp2.link_site1 as pep2_site, */ pe2.dbsequence_ref as pep2_prot_id, (pe2.pep_start + mp2.link_site1 - 1) as abspos2 FROM
+# (SELECT * from spectrumidentification where upload_id in (select * from upload_ids) ) si INNER JOIN
+# (SELECT * from modifiedpeptide where upload_id in (select * from upload_ids) and link_site1 is not null ) mp1 ON si.pep1_id = mp1.id AND si.upload_id = mp1.upload_id INNER JOIN
+# (SELECT * from peptideevidence where upload_id in (select * from upload_ids) ) pe1 ON mp1.id = pe1.peptide_ref AND mp1.upload_id = pe1.upload_id INNER JOIN
+# (SELECT * from modifiedpeptide where upload_id in (select * from upload_ids)  and link_site1 is not null ) mp2 ON si.pep2_id = mp2.id AND si.upload_id = mp2.upload_id INNER JOIN
+# (SELECT * from peptideevidence where upload_id in (select * from upload_ids) ) pe2 ON mp2.id = pe2.peptide_ref AND mp2.upload_id = pe2.upload_id INNER JOIN
+# (SELECT identification_file_name, id from upload WHERE project_id = %s) u on u.id = si.upload_id;"""
+#
+#             print(sql)
+#             cur.execute(sql, [project_id, project_id])
+#             mzid_rows = cur.fetchall()
+#
+#             print("finished")
+#             # close the communication with the PostgreSQL
+#             cur.close()
+#         except (Exception, psycopg2.DatabaseError) as error:
+#             print(error)
+#         finally:
+#             if conn is not None:
+#                 conn.close()
+#                 print('Database connection closed.')
+#             return jsonify(mzid_rows)
 
     return app
 
@@ -337,11 +421,11 @@ def get_matches(cur, uuid):
                 "si": search_id,
                 "cm": match_row[12],
                 "pc_c": match_row[7],
-                "pc_mz": match_row[11], # experimental mz
+                "pc_mz": match_row[11],  # experimental mz
                 "sp_id": match_row[2],
                 "sd_ref": match_row[3],  # spectra data ref
-                "pass": match_row[8], # pass threshold
-                "r": match_row[9], # rank
+                "pass": match_row[8],  # pass threshold
+                "r": match_row[9],  # rank
             }
             if search_id in search_peptide_ids:
                 peptide_ids = search_peptide_ids[search_id]
@@ -450,7 +534,7 @@ def get_proteins(cur, protein_clause):
     if protein_clause != "()":
         sql = """SELECT id, name, accession, sequence, upload_id, description  FROM dbsequence WHERE """ \
               + protein_clause + """;"""
-        print(sql);
+        print(sql)
         cur.execute(sql)
         protein_rows = cur.fetchall()
         proteins = []
