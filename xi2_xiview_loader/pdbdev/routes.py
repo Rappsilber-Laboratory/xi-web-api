@@ -57,19 +57,19 @@ def get_psm_level_residue_pairs(project_id):
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
 
-        sql = """WITH upload_ids AS (SELECT ID from upload WHERE project_id = %s)
-SELECT si.id, u.identification_file_name,
-si.pep1_id, /* pe1.pep_start as pep1_start, mp1.link_site1 as pep1_site, */ pe1.dbsequence_ref as pep1_prot_id, (pe1.pep_start + mp1.link_site1 - 1) as abspos1,
-si.pep2_id, /* pe2.pep_start as pep2_start, mp2.link_site1 as pep2_site, */ pe2.dbsequence_ref as pep2_prot_id, (pe2.pep_start + mp2.link_site1 - 1) as abspos2 FROM  
-(SELECT * from spectrumidentification where upload_id in (select * from upload_ids) ) si INNER JOIN 
-(SELECT * from modifiedpeptide where upload_id in (select * from upload_ids) and link_site1 is not null ) mp1 ON si.pep1_id = mp1.id AND si.upload_id = mp1.upload_id INNER JOIN 
-(SELECT * from peptideevidence where upload_id in (select * from upload_ids) ) pe1 ON mp1.id = pe1.peptide_ref AND mp1.upload_id = pe1.upload_id INNER JOIN 
-(SELECT * from modifiedpeptide where upload_id in (select * from upload_ids)  and link_site1 is not null ) mp2 ON si.pep2_id = mp2.id AND si.upload_id = mp2.upload_id INNER JOIN 
-(SELECT * from peptideevidence where upload_id in (select * from upload_ids) ) pe2 ON mp2.id = pe2.peptide_ref AND mp2.upload_id = pe2.upload_id INNER JOIN 
-(SELECT identification_file_name, id from upload WHERE project_id = %s) u on u.id = si.upload_id;"""
+        sql = """SELECT si.id, u.identification_file_name,
+si.pep1_id, pe1.dbsequence_ref as pep1_prot_id, (pe1.pep_start + mp1.link_site1 - 1) as abspos1,
+si.pep2_id, pe2.dbsequence_ref as pep2_prot_id, (pe2.pep_start + mp2.link_site1 - 1) as abspos2 FROM  
+spectrumidentification si INNER JOIN 
+modifiedpeptide mp1 ON si.pep1_id = mp1.id AND si.upload_id = mp1.upload_id INNER JOIN 
+peptideevidence pe1 ON mp1.id = pe1.peptide_ref AND mp1.upload_id = pe1.upload_id INNER JOIN 
+modifiedpeptide mp2 ON si.pep2_id = mp2.id AND si.upload_id = mp2.upload_id INNER JOIN 
+peptideevidence pe2 ON mp2.id = pe2.peptide_ref AND mp2.upload_id = pe2.upload_id INNER JOIN 
+upload u on u.id = si.upload_id
+where u.project_id = %s and mp1.link_site1 is not null and mp2.link_site1 is not null;"""
 
         print(sql)
-        cur.execute(sql, [project_id, project_id])
+        cur.execute(sql, [project_id])
         mzid_rows = cur.fetchall()
 
         print("finished")
