@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, request, make_response
+from flask import Flask, jsonify, render_template, request
 from flask_cors import CORS
 import psycopg2  # todo - use sqlalchemy instead? LK: There's also flask_sqlalchemy
 import json
@@ -40,7 +40,8 @@ def create_app():
 
     :return: flask app
     """
-    app = Flask(__name__, static_url_path="", static_folder='../static', template_folder='../templates')
+    app = Flask(__name__, static_url_path="",
+                static_folder='../static', template_folder='../templates')
 
     # Load flask config
     if app.env == 'development':
@@ -75,7 +76,7 @@ def create_app():
             # create a cursor
             cur = conn.cursor()
 
-            sql = """SELECT project_id FROM upload GROUP BY project_id;""" #   ORDER BY time_saved DESC;"""
+            sql = """SELECT project_id FROM upload GROUP BY project_id;"""
             print(sql)
             cur.execute(sql)
             ds_rows = cur.fetchall()
@@ -112,7 +113,7 @@ def create_app():
             # create a cursor
             cur = conn.cursor()
 
-            sql = """SELECT identification_file_name, id FROM upload WHERE project_id = %s;""" #   ORDER BY time_saved DESC;"""
+            sql = """SELECT identification_file_name, id FROM upload WHERE project_id = %s;"""
             print(sql)
             cur.execute(sql, [pxid])
             mzid_rows = cur.fetchall()
@@ -144,7 +145,8 @@ def create_app():
             data_object = get_data_object(uuid)
         except psycopg2.DatabaseError:
             return jsonify({"error": "Database error"}), 500
-        # return json.dumps(get_data_object(uuid)) # think this will be more efficient as it doesn't pretty print
+        # think this will be more efficient as it doesn't pretty print
+        # return json.dumps(get_data_object(uuid))
         return jsonify(data_object)  # this is more readable for debugging
 
     @app.route('/get_peaklist', methods=['GET'])
@@ -199,7 +201,8 @@ def create_app():
     #
     #         sql = """SELECT t1.layout AS layout, t1.description AS name FROM layout AS t1
     #               WHERE t1.resultset_id = %s AND t1.time_saved IN
-    #               (SELECT max(t1.time_saved) FROM layout AS t1  WHERE t1.resultset_id = %s GROUP BY t1.description);"""
+    #               (SELECT max(t1.time_saved) FROM layout AS t1
+    #               WHERE t1.resultset_id = %s GROUP BY t1.description);"""
     #         # sql = """SELECT t1.description, t1.layout FROM layout AS t1
     #         #     WHERE t1.resultset_id = %s ORDER BY t1.time_saved desc LIMIT 1"""
     #         cur.execute(sql, [uuid, uuid])
@@ -242,7 +245,8 @@ def create_app():
 
             data["sid"] = uuid
             # data["resultset"], data["searches"] = get_resultset_search_metadata(cur, uuid)
-            data["matches"], peptide_clause = get_matches(cur, uuid) #, data["resultset"]["mainscore"])
+            data["matches"], peptide_clause = get_matches(cur, uuid)
+            # data["resultset"]["mainscore"])
             data["peptides"], protein_clause = get_peptides(cur, peptide_clause)
             data["proteins"] = get_proteins(cur, protein_clause)
             # data["xiNETLayout"] = get_layout(cur, uuid)
@@ -413,15 +417,16 @@ def get_matches(cur, uuid):
 def get_peptides(cur, peptide_clause):
     if peptide_clause != "()":
         sql = """SELECT mp.id, mp.upload_id AS search_uuid,
-                                mp.base_sequence AS sequence,
-                                array_agg(pp.dbsequence_ref) AS proteins,
-                                array_agg(pp.pep_start) AS positions,
-                                array_agg(pp.is_decoy) AS decoys,
-                                mp.link_site1
-                                    FROM modifiedpeptide AS mp
-                                    JOIN peptideevidence AS pp
-                                    ON mp.id = pp.peptide_ref AND mp.upload_id = pp.upload_id
-                                WHERE """ + peptide_clause + """ GROUP BY mp.id, mp.upload_id, mp.base_sequence;"""
+                    mp.base_sequence AS sequence,
+                    array_agg(pp.dbsequence_ref) AS proteins,
+                    array_agg(pp.pep_start) AS positions,
+                    array_agg(pp.is_decoy) AS decoys,
+                    mp.link_site1
+                        FROM modifiedpeptide AS mp
+                        JOIN peptideevidence AS pp
+                        ON mp.id = pp.peptide_ref AND mp.upload_id = pp.upload_id
+                    WHERE """ + peptide_clause + """
+                    GROUP BY mp.id, mp.upload_id, mp.base_sequence;"""
         # print(sql);
         cur.execute(sql)
         peptides = []
@@ -477,8 +482,8 @@ def get_peptides(cur, peptide_clause):
 
 def get_proteins(cur, protein_clause):
     if protein_clause != "()":
-        sql = """SELECT id, name, accession, sequence, upload_id, description  FROM dbsequence WHERE """ \
-              + protein_clause + """;"""
+        sql = """SELECT id, name, accession, sequence, upload_id, description
+                    FROM dbsequence WHERE """ + protein_clause + """;"""
         print(sql)
         cur.execute(sql)
         protein_rows = cur.fetchall()
@@ -497,7 +502,7 @@ def get_proteins(cur, protein_clause):
 
 
 def get_layout(cur, uuid):
-    sql = """SELECT t1.description, t1.layout FROM layout AS t1 
+    sql = """SELECT t1.description, t1.layout FROM layout AS t1
         WHERE t1.resultset_id = %s ORDER BY t1.time_saved DESC LIMIT 1"""
     cur.execute(sql, [uuid])
     data = cur.fetchall()
