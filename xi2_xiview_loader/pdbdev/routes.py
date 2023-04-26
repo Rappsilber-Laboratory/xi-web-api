@@ -1,7 +1,7 @@
 import psycopg2
 from flask import jsonify
 from psycopg2.extras import RealDictCursor
-
+import json
 from xi2_xiview_loader import get_db_connection
 from xi2_xiview_loader.pdbdev import bp
 
@@ -55,16 +55,16 @@ def get_psm_level_residue_pairs(project_id):
     :return:
     """
     conn = None
-    mzid_rows = []
+    data = {}
     try:
         # connect to the PostgreSQL server and create a cursor
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
 
-        sql = """SELECT si.id, u.identification_file_name,
-si.pep1_id, pe1.dbsequence_ref as pep1_prot_id, (pe1.pep_start + mp1.link_site1 - 1) as abspos1,
-si.pep2_id, pe2.dbsequence_ref as pep2_prot_id, (pe2.pep_start + mp2.link_site1 - 1) as abspos2 FROM
-spectrumidentification si INNER JOIN
+        sql = """SELECT si.id, u.identification_file_name as file, si.pass_threshold as pass,
+pe1.dbsequence_ref as prot1, (pe1.pep_start + mp1.link_site1 - 1) as pos1,
+pe2.dbsequence_ref as prot2, (pe2.pep_start + mp2.link_site1 - 1) as pos2
+FROM spectrumidentification si INNER JOIN
 modifiedpeptide mp1 ON si.pep1_id = mp1.id AND si.upload_id = mp1.upload_id INNER JOIN
 peptideevidence pe1 ON mp1.id = pe1.peptide_ref AND mp1.upload_id = pe1.upload_id INNER JOIN
 modifiedpeptide mp2 ON si.pep2_id = mp2.id AND si.upload_id = mp2.upload_id INNER JOIN
@@ -75,6 +75,7 @@ where u.project_id = %s and mp1.link_site1 is not null and mp2.link_site1 is not
         print(sql)
         cur.execute(sql, [project_id])
         mzid_rows = cur.fetchall()
+        data["data"] = mzid_rows
 
         print("finished")
         # close the communication with the PostgreSQL
@@ -85,7 +86,7 @@ where u.project_id = %s and mp1.link_site1 is not null and mp2.link_site1 is not
         if conn is not None:
             conn.close()
             print('Database connection closed.')
-        return jsonify(mzid_rows)
+        return json.dumps(data)
 
 
 @bp.route('/projects/<project_id>/residue-pairs/reported', methods=['GET'])
