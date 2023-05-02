@@ -1,4 +1,6 @@
 database.ini
+kubernetes.yml
+Dockerfile
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

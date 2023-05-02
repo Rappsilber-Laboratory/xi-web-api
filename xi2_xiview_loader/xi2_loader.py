@@ -131,6 +131,17 @@ def create_app():
                 raise error
             return mzid_rows
 
+    @app.route('/visualisations', methods=['GET'])
+    def visualisations():
+        pxid = request.args.get('pxid')
+        dataset = get_dataset(pxid)
+        datafile = {}
+        for record in dataset:
+            datafile["filename"] = record[0]
+            datafile["visualisation"] = "cross-linking"
+            datafile["link"] = request.base_url[:request.base_url.rfind('/')] + "/network.html?id=" + record[1]
+        return json.dumps(datafile)
+
     @app.route('/get_data', methods=['GET'])
     def get_data():
         uuid = request.args.get('id')  # id(s) of data set(s)
