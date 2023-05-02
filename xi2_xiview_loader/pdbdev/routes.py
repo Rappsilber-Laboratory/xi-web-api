@@ -6,7 +6,7 @@ from xi2_xiview_loader import get_db_connection
 from xi2_xiview_loader.pdbdev import bp
 
 
-@bp.route('/projects/<project_id>/sequences', methods=['GET'])
+@bp.route('/ws/projects/<project_id>/sequences', methods=['GET'])
 def sequences(project_id):
     """
     Get all sequences belonging to a project.
@@ -43,7 +43,7 @@ def sequences(project_id):
         return jsonify(mzid_rows)
 
 
-@bp.route('/projects/<project_id>/residue-pairs/psm-level', methods=['GET'])
+@bp.route('/ws/projects/<project_id>/residue-pairs/psm-level', methods=['GET'])
 def get_psm_level_residue_pairs(project_id):
     """
     Get all residue pairs (based on PSM level data) belonging to a project.
@@ -89,7 +89,7 @@ where u.project_id = %s and mp1.link_site1 is not null and mp2.link_site1 is not
         return json.dumps(data)
 
 
-@bp.route('/projects/<project_id>/residue-pairs/reported', methods=['GET'])
+@bp.route('/ws/projects/<project_id>/residue-pairs/reported', methods=['GET'])
 def get_reported_residue_pairs(project_id):
     """
     Get all residue-pairs reported for a project
@@ -102,7 +102,7 @@ def get_reported_residue_pairs(project_id):
     return "Not Implemented"
 
 
-@bp.route('/projects/<project_id>/reported-thresholds', methods=['GET'])
+@bp.route('/ws/projects/<project_id>/reported-thresholds', methods=['GET'])
 def get_reported_thresholds(project_id):
     """
     Get all reported thresholds for a project.
