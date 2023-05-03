@@ -75,7 +75,7 @@ def create_app(config='database.ini'):
         uuid = request.form['uuid']
         layout = request.form['layout']
         description = request.form['name']
-
+        conn = None
         try:
             # connect to the PostgreSQL server
             print('Connecting to the PostgreSQL database...')
@@ -105,7 +105,7 @@ def create_app(config='database.ini'):
     def load_layout():
         # actually returns all different layouts available
         uuid = request.form['uuid']
-
+        conn = None
         try:
             # connect to the PostgreSQL server
             print('Connecting to the PostgreSQL database...')
@@ -228,9 +228,9 @@ def get_resultset_search_metadata(cur, uuids, uuid_dict):
                            """
     cur.execute(sql, {'uuids': tuple(uuids)})
     resultset_meta_cur = cur.fetchall()
+    mainscore = resultset_meta_cur[0][3]
     resultsets = {}
     for rs_row in resultset_meta_cur:
-        mainscore = rs_row[3]
         rs = {
             "group": uuid_dict[str(rs_row[5])],
             "id": rs_row[5],
