@@ -62,7 +62,7 @@ def create_app(config='database.ini'):
         if uuid_param is None or not re.match(r'^[a-zA-Z0-9.~_-]+$', uuid_param):
             return jsonify({"error": "Invalid id(s)"}), 400
 
-        # return json.dumps(get_data_object(uuid)) # think this will be more efficient as it doesn't pretty print
+        # return json.dumps(get_data_object(uuid_param)) # think this will be more efficient as it doesn't pretty print
         return jsonify(get_data_object(uuid_param))
 
     @app.route('/get_peaklist', methods=['GET'])
@@ -167,8 +167,6 @@ def create_app(config='database.ini'):
             # create a cursor
             cur = conn.cursor()
 
-            # i see... multiple return types, that's kind of cool,
-            # maybe a bit confusing the way I've used it here
             data["sid"] = uuid_param
             data["group_names"] = uuid_dict
             data["resultset"], data["searches"] = get_resultset_search_metadata(cur, uuids)
@@ -308,12 +306,12 @@ def get_matches(cur, uuids, main_score_index):
     # (search_id = a AND id in(x,y,z)) OR (search_id = b AND (...)) OR ...
     first_search = True
     peptide_clause = "("
-    for search_id, v in search_peptide_ids.items():
+    for k, v in search_peptide_ids.items():
         if first_search:
             first_search = False
         else:
             peptide_clause += " OR "
-        peptide_clause += "(mp.search_id = '" + str(search_id) + "' AND mp.id IN ("
+        peptide_clause += "(mp.search_id = '" + str(k) + "' AND mp.id IN ("
         # print("rs:" + str(k))
         first_pep_id = True
         for pep_id in v:
@@ -335,11 +333,13 @@ def get_peptides(cur, peptide_clause):
                                 mp.sequence AS sequence,
                                 mp.modification_ids AS mod_ids,
                                 mp.modification_position AS mod_positions,
-                                array_agg(pp.protein_id) AS proteins,
+                                array_agg(p.accession) AS proteins,
                                 array_agg(pp.start) AS positions
                                     FROM modifiedpeptide AS mp
                                     JOIN peptideposition AS pp
                                     ON mp.id = pp.mod_pep_id AND mp.search_id = pp.search_id
+                                    JOIN protein AS p
+                                    ON pp.protein_id = p.id AND pp.search_id = p.search_id
                                 WHERE """ + peptide_clause + """ GROUP BY mp.id, mp.search_id, mp.sequence
                                """
         # print(sql);
@@ -355,6 +355,7 @@ def get_peptides(cur, peptide_clause):
                 prots = peptide_row[5]
                 peptide = {
                     "id": peptide_row[0],
+                    "search_id": peptide_row[1],
                     "seq_mods": peptide_row[2],
                     "mod_ids": peptide_row[3],
                     "mod_pos": peptide_row[4],
@@ -381,15 +382,15 @@ def get_peptides(cur, peptide_clause):
                 first_search = False
             else:
                 protein_clause += " OR "
-            protein_clause += "(search_id = '" + str(search_id) + "' AND id IN ("
+            protein_clause += "(search_id = '" + str(k) + "' AND accession IN ('"
             first_prot_id = True
             for prot_id in v:
                 if first_prot_id:
                     first_prot_id = False
                 else:
-                    protein_clause += ","
+                    protein_clause += "','"
                 protein_clause += str(prot_id)
-            protein_clause += "))"
+            protein_clause += "'))"
 
         return peptides, protein_clause
 
@@ -405,7 +406,7 @@ def get_proteins(cur, protein_clause):
         proteins = []
         for protein_row in protein_rows:
             protein = {
-                "id": protein_row[0],
+                "id": protein_row[2],
                 "name": protein_row[1],
                 "accession": protein_row[2],
                 "sequence": protein_row[3],
