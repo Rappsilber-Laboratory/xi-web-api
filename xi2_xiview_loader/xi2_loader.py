@@ -169,8 +169,8 @@ def create_app(config='database.ini'):
 
             data["sid"] = uuid_param
             data["group_names"] = uuid_dict
-            data["resultset"], data["searches"] = get_resultset_search_metadata(cur, uuids)
-            data["matches"], peptide_clause = get_matches(cur, uuids, data["resultset"]["mainscore"])
+            mainscore, data["searches"] = get_resultset_search_metadata(cur, uuids, uuid_dict)
+            data["matches"], peptide_clause = get_matches(cur, uuids, mainscore)
             data["peptides"], protein_clause = get_peptides(cur, peptide_clause)
             data["proteins"] = get_proteins(cur, protein_clause)
             # data["xiNETLayout"] = get_layout(cur, uuid_param)
@@ -216,10 +216,10 @@ def create_app(config='database.ini'):
     return app
 
 
-def get_resultset_search_metadata(cur, uuids):
+def get_resultset_search_metadata(cur, uuids, uuid_dict):
     sql = """
                 SELECT rs.name, rs.note, rs.config, rs.main_score, rst.name,
-                      s.id, s.name, s.config, s.note
+                      rs.id, s.name, s.config, s.note, s.id
                  FROM resultset AS rs
                   LEFT JOIN resultsettype AS rst ON (rs.rstype_id = rst.id)
                   LEFT JOIN ResultSearch AS result_search ON (rs.id = result_search.resultset_id)
@@ -228,26 +228,24 @@ def get_resultset_search_metadata(cur, uuids):
                            """
     cur.execute(sql, {'uuids': tuple(uuids)})
     resultset_meta_cur = cur.fetchall()
-    first_row = resultset_meta_cur[0]
-    # todo resultset.config in db, column is text but value is json
-    resultset_meta = {
-        "name": first_row[0],
-        "note": first_row[1],
-        # "config": json.loads(first_row[2]),
-        "config": first_row[2],
-        "mainscore": first_row[3],
-        "resultsettype": first_row[4]
-    }
-    searches = {}
-    for search_row in resultset_meta_cur:
-        search = {
-            "id": search_row[5],
-            "name": search_row[6],
-            "config": json.loads(search_row[7]),
-            # "note": search_row[8]
+    resultsets = {}
+    for rs_row in resultset_meta_cur:
+        mainscore = rs_row[3]
+        rs = {
+            "group": uuid_dict[str(rs_row[5])],
+            "id": rs_row[5],
+            "rs_name": rs_row[0],
+            "rs_note": rs_row[1],
+            "rs_config": rs_row[2],
+            "rs_mainscore": rs_row[3],
+            "resultsettype": rs_row[4],
+            "s_id": rs_row[9],
+            "s_name": rs_row[6],
+            "s_config": json.loads(rs_row[7]),
+            "s_note": rs_row[8]
         }
-        searches[search["id"]] = search
-    return resultset_meta, searches
+        resultsets[rs["id"]] = rs
+    return mainscore, resultsets
 
 
 def get_matches(cur, uuids, main_score_index):
@@ -257,7 +255,7 @@ def get_matches(cur, uuids, main_score_index):
                     CASE WHEN rm.site2 IS NOT NULL THEN rm.site2 ELSE m.site2 END, 
                     rm.scores[%(score_idx)s], m.crosslinker_id,
                     m.search_id, m.calc_mass, m.assumed_prec_charge, m.assumed_prec_mz,
-                    ms.spectrum_id
+                    ms.spectrum_id, rm.resultset_id
                 FROM ResultMatch AS rm
                     JOIN match AS m ON rm.match_id = m.id
                     JOIN matchedspectrum as ms ON rm.match_id = ms.match_id
@@ -288,7 +286,8 @@ def get_matches(cur, uuids, main_score_index):
                 "cm": match_row[8],
                 "pc_c": match_row[9],
                 "pc_mz": match_row[10],
-                "sp_id": match_row[11]
+                "sp_id": match_row[11],
+                "rsi": match_row[12]
             }
             if search_id in search_peptide_ids.keys():
                 peptide_ids = search_peptide_ids[search_id]
