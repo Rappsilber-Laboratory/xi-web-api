@@ -70,7 +70,7 @@ peptideevidence pe1 ON mp1.id = pe1.peptide_ref AND mp1.upload_id = pe1.upload_i
 modifiedpeptide mp2 ON si.pep2_id = mp2.id AND si.upload_id = mp2.upload_id INNER JOIN
 peptideevidence pe2 ON mp2.id = pe2.peptide_ref AND mp2.upload_id = pe2.upload_id INNER JOIN
 upload u on u.id = si.upload_id
-where u.project_id = %s and mp1.link_site1 is not null and mp2.link_site1 is not null;"""
+where u.project_id = %s and mp1.link_site1 > 0 and mp2.link_site1 > 0;"""
 
         print(sql)
         cur.execute(sql, [project_id])

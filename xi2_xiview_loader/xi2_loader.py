@@ -113,7 +113,7 @@ def create_app():
             # create a cursor
             cur = conn.cursor()
 
-            sql = """SELECT identification_file_name, id FROM upload WHERE project_id = %s;"""
+            sql = """SELECT identification_file_name, project_id, identification_file_name_clean FROM upload WHERE project_id = % ORDER BY upload_time DESC LIMIT 1;"""
             print(sql)
             cur.execute(sql, [pxid])
             mzid_rows = cur.fetchall()
@@ -136,29 +136,72 @@ def create_app():
         pxid = request.args.get('pxid')
         dataset = get_dataset(pxid)
         datafile = {}
-        for record in dataset:
-            datafile["filename"] = record[0]
-            datafile["visualisation"] = "cross-linking"
-            datafile["link"] = request.base_url[:request.base_url.rfind('/')] + "/network.html?id=" + record[1]
+        record = dataset[0] #  todo - return an array, not a single record - not changing now coz might break pride end
+        datafile["filename"] = record[1]
+        datafile["visualisation"] = "cross-linking"
+        datafile["link"] = request.base_url[:request.base_url.rfind('/')] + "/network.html?project=" + record[0] + "&file=" + record[2]
         return json.dumps(datafile)
 
     @app.route('/get_data', methods=['GET'])
     def get_data():
-        uuid = request.args.get('id')  # id(s) of data set(s)
-        # quit if uuid is None
-        if uuid is None:
-            return jsonify({"error": "No id provided"}), 400
-        # quit if uuid contains char that isn't alphanumeric, comma, hyphen, period, or tilde
-        elif not re.match(r'^[a-zA-Z0-9,-.~]+$', uuid):
+        """
+        Get the data for the network visualisation.
+        URL for the future should have the following URL:
+        https: // www.ebi.ac.uk / pride / archive / xiview / network.html?project=PXD020453&file=Cullin_SDA_1pcFDR.mzid
+        Users may provide only projects, meaning we need to have an aggregated  view.
+        https: // www.ebi.ac.uk / pride / archive / xiview / network.html?project=PXD020453
+
+        :return:
+        """
+        pxid = request.args.get('project')
+        if pxid is None:
+            return jsonify({"error": "No project id provided"}), 400
+        elif not re.match(r'^[a-zA-Z0-9]+$', pxid):
             return jsonify({"error": "Invalid id(s)"}), 400
+
+        file = request.args.get('file')
+        if file is None:
+            return jsonify({"error": "No file name provided - aggregating for project not supported yet"}), 400
+        filename_clean = re.sub(r'[^0-9a-zA-Z-]+', '-', file)
+
+        conn = None
+        uuid  = None
+        error = None
+        try:
+            # connect to the PostgreSQL server
+            print('Connecting to the PostgreSQL database...')
+            conn = get_db_connection()
+
+            # create a cursor
+            cur = conn.cursor()
+
+            sql = """SELECT id FROM upload WHERE project_id = %s AND identification_file_name_clean = %s ORDER BY upload_time DESC LIMIT 1;"""
+            print(sql)
+            cur.execute(sql, [pxid, filename_clean])
+            mzid_id = cur.fetchone()
+            if mzid_id is None:
+                return jsonify({"error": "No data found"}), 404
+            print("finished")
+            # close the communication with the PostgreSQL
+            cur.close()
+            uuid = mzid_id[0]
+        except (Exception, psycopg2.DatabaseError) as e:
+            print(e)
+            error = e
+        finally:
+            if conn is not None:
+                conn.close()
+                print('Database connection closed.')
+            if error is not None:
+                raise error
 
         try:
             data_object = get_data_object(uuid)
         except psycopg2.DatabaseError:
             return jsonify({"error": "Database error"}), 500
         # think this will be more efficient as it doesn't pretty print
-        # return json.dumps(get_data_object(uuid))
-        return jsonify(data_object)  # this is more readable for debugging
+        return json.dumps(data_object)
+        # return jsonify(data_object)  # this is more readable for debugging
 
     @app.route('/get_peaklist', methods=['GET'])
     def get_peaklist():
@@ -356,7 +399,14 @@ def get_matches(cur, uuid):
     #                 WHERE rm.resultset_id = %s AND m.site1 >0 AND m.site2 >0
     #                 AND rm.top_ranking = TRUE;"""
 
-    sql = """SELECT * FROM spectrumidentification WHERE upload_id = %s;"""
+    sql = """SELECT * FROM spectrumidentification si 
+    INNER JOIN modifiedpeptide mp1 ON si.pep1_id = mp1.id AND si.upload_id = mp1.upload_id 
+    INNER JOIN modifiedpeptide mp2 ON si.pep2_id = mp2.id AND si.upload_id = mp2.upload_id
+    WHERE si.upload_id = %s 
+    AND si.pass_threshold = TRUE 
+    AND mp1.link_site1 > 0
+    AND mp2.link_site1 > 0;"""
+    # bit weid above works when link_site1 is a text column
 
     cur.execute(sql, [uuid])
     matches = []
