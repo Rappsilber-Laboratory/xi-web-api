@@ -57,13 +57,13 @@ def create_app(config='database.ini'):
 
     @app.route('/get_data', methods=['GET'])
     def get_data():
-        uuid = request.args.get('uuid')  # uuid of search
-        # quit if uuid contains char that isn't alphanumeric, comma or hyphen
-        if uuid is None or not re.match(r'^[a-zA-Z0-9,-]+$', uuid):
+        uuid_param = request.args.get('uuid')  # uuid of search
+        # quit if uuid contains char that isn't alphanumeric, underscore, dash, tilde, period
+        if uuid_param is None or not re.match(r'^[a-zA-Z0-9.~_-]+$', uuid_param):
             return jsonify({"error": "Invalid id(s)"}), 400
 
         # return json.dumps(get_data_object(uuid)) # think this will be more efficient as it doesn't pretty print
-        return jsonify(get_data_object(uuid))
+        return jsonify(get_data_object(uuid_param))
 
     @app.route('/get_peaklist', methods=['GET'])
     def get_peaklist():
@@ -146,8 +146,17 @@ def create_app(config='database.ini'):
         # uuid = request.args.get('uuid')
         return app.send_static_file('network.html')
 
-    def get_data_object(uuid):
+    def get_data_object(uuid_param):
         """ Connect to the PostgreSQL database server """
+
+        if '.' in uuid_param:
+            groups = uuid_param.split('.')
+            uuid_dict = {s.split('~')[0]: s.split('~')[1] for s in groups}
+            uuids = list(uuid_dict.keys())
+        else:
+            uuids = [uuid_param]
+            uuid_dict = uuid_param
+
         conn = None
         data = {}
         try:
@@ -160,12 +169,13 @@ def create_app(config='database.ini'):
 
             # i see... multiple return types, that's kind of cool,
             # maybe a bit confusing the way I've used it here
-            data["sid"] = uuid
-            data["resultset"], data["searches"] = get_resultset_search_metadata(cur, uuid)
-            data["matches"], peptide_clause = get_matches(cur, uuid, data["resultset"]["mainscore"])
+            data["sid"] = uuid_param
+            data["group_names"] = uuid_dict
+            data["resultset"], data["searches"] = get_resultset_search_metadata(cur, uuids)
+            data["matches"], peptide_clause = get_matches(cur, uuids, data["resultset"]["mainscore"])
             data["peptides"], protein_clause = get_peptides(cur, peptide_clause)
             data["proteins"] = get_proteins(cur, protein_clause)
-            data["xiNETLayout"] = get_layout(cur, uuid)
+            # data["xiNETLayout"] = get_layout(cur, uuid_param)
 
             print("finished")
             # close the communication with the PostgreSQL
@@ -208,7 +218,7 @@ def create_app(config='database.ini'):
     return app
 
 
-def get_resultset_search_metadata(cur, uuid):
+def get_resultset_search_metadata(cur, uuids):
     sql = """
                 SELECT rs.name, rs.note, rs.config, rs.main_score, rst.name,
                       s.id, s.name, s.config, s.note
@@ -216,9 +226,9 @@ def get_resultset_search_metadata(cur, uuid):
                   LEFT JOIN resultsettype AS rst ON (rs.rstype_id = rst.id)
                   LEFT JOIN ResultSearch AS result_search ON (rs.id = result_search.resultset_id)
                   LEFT JOIN Search AS s ON (result_search.search_id = s.id)
-                WHERE rs.id = %s
+                WHERE rs.id IN %(uuids)s
                            """
-    cur.execute(sql, [uuid])
+    cur.execute(sql, {'uuids': tuple(uuids)})
     resultset_meta_cur = cur.fetchall()
     first_row = resultset_meta_cur[0]
     # todo resultset.config in db, column is text but value is json
@@ -242,21 +252,21 @@ def get_resultset_search_metadata(cur, uuid):
     return resultset_meta, searches
 
 
-def get_matches(cur, uuid, main_score_index):
+def get_matches(cur, uuids, main_score_index):
     # todo - the join to matchedspectrum for cleavable crosslinker - needs a GROUP BY match_id?'
     sql = """SELECT m.id, m.pep1_id, m.pep2_id, 
                     CASE WHEN rm.site1 IS NOT NULL THEN rm.site1 ELSE m.site1 END, 
                     CASE WHEN rm.site2 IS NOT NULL THEN rm.site2 ELSE m.site2 END, 
-                    rm.scores[%s], m.crosslinker_id,
+                    rm.scores[%(score_idx)s], m.crosslinker_id,
                     m.search_id, m.calc_mass, m.assumed_prec_charge, m.assumed_prec_mz,
                     ms.spectrum_id
                 FROM ResultMatch AS rm
                     JOIN match AS m ON rm.match_id = m.id
                     JOIN matchedspectrum as ms ON rm.match_id = ms.match_id
-                    WHERE rm.resultset_id = %s AND m.site1 >0 AND m.site2 >0
+                    WHERE rm.resultset_id IN %(uuids)s
+                    AND m.site1 >0 AND m.site2 >0
                     AND rm.top_ranking = TRUE;"""
-
-    cur.execute(sql, [main_score_index, uuid])
+    cur.execute(sql, {'uuids': tuple(uuids), 'score_idx': main_score_index})
     matches = []
     search_peptide_ids = {}
     while True:
@@ -282,7 +292,8 @@ def get_matches(cur, uuid, main_score_index):
                 "pc_mz": match_row[10],
                 "sp_id": match_row[11]
             }
-            if search_id in search_peptide_ids:
+            peptide_ids = None
+            if search_id in search_peptide_ids.keys():
                 peptide_ids = search_peptide_ids[search_id]
             else:
                 peptide_ids = set()
@@ -298,7 +309,7 @@ def get_matches(cur, uuid, main_score_index):
     # (search_id = a AND id in(x,y,z)) OR (search_id = b AND (...)) OR ...
     first_search = True
     peptide_clause = "("
-    for k, v in search_peptide_ids.items():
+    for search_id, v in search_peptide_ids.items():
         if first_search:
             first_search = False
         else:
