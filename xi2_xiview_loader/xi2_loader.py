@@ -292,7 +292,6 @@ def get_matches(cur, uuids, main_score_index):
                 "pc_mz": match_row[10],
                 "sp_id": match_row[11]
             }
-            peptide_ids = None
             if search_id in search_peptide_ids.keys():
                 peptide_ids = search_peptide_ids[search_id]
             else:
