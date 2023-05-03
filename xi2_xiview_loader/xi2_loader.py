@@ -84,7 +84,7 @@ def create_app(config='database.ini'):
             # create a cursor
             cur = conn.cursor()
 
-            sql = "INSERT INTO layout (resultset_id, layout, description) VALUES (%s, %s, %s)"
+            sql = "INSERT INTO layout (url_param, layout, description) VALUES (%s, %s, %s)"
 
             cur.execute(sql, [uuid, layout, description])
             conn.commit()
@@ -115,8 +115,8 @@ def create_app(config='database.ini'):
             cur = conn.cursor()
 
             sql = """SELECT t1.layout AS layout, t1.description AS name FROM layout AS t1 
-                  WHERE t1.resultset_id = %s AND t1.time_saved IN 
-                  (SELECT max(t1.time_saved) FROM layout AS t1  WHERE t1.resultset_id = %s GROUP BY t1.description);"""
+                  WHERE t1.url_param = %s AND t1.time_saved IN 
+                  (SELECT max(t1.time_saved) FROM layout AS t1  WHERE t1.url_param = %s GROUP BY t1.description);"""
             # sql = """SELECT t1.description, t1.layout FROM layout AS t1
             #     WHERE t1.resultset_id = %s ORDER BY t1.time_saved desc LIMIT 1"""
             cur.execute(sql, [uuid, uuid])
@@ -173,7 +173,7 @@ def create_app(config='database.ini'):
             data["matches"], peptide_clause = get_matches(cur, uuids, mainscore)
             data["peptides"], protein_clause = get_peptides(cur, peptide_clause)
             data["proteins"] = get_proteins(cur, protein_clause)
-            # data["xiNETLayout"] = get_layout(cur, uuid_param)
+            data["xiNETLayout"] = get_layout(cur, uuid_param)
 
             print("finished")
             # close the communication with the PostgreSQL
@@ -375,7 +375,7 @@ def get_peptides(cur, peptide_clause):
         # create sql clause that selects proteins by id and resultset
         # (search_id = a AND id in(x,y,z)) OR (search_id = b AND (...)) OR ...
         first_search = True
-        protein_clause = "("
+        protein_clause = ""
         for k, v in search_protein_ids.items():
             if first_search:
                 first_search = False
@@ -397,9 +397,8 @@ def get_peptides(cur, peptide_clause):
 def get_proteins(cur, protein_clause):
     if protein_clause != "()":
         sql = """SELECT id, name, accession, sequence, search_id, is_decoy FROM protein
-                                WHERE """ + protein_clause + """)
+                                WHERE (""" + protein_clause + """)
                                 """
-        # print(sql);
         cur.execute(sql)
         protein_rows = cur.fetchall()
         proteins = []
@@ -418,7 +417,7 @@ def get_proteins(cur, protein_clause):
 
 def get_layout(cur, uuid):
     sql = """SELECT t1.description, t1.layout FROM layout AS t1 
-        WHERE t1.resultset_id = %s ORDER BY t1.time_saved DESC LIMIT 1"""
+        WHERE t1.url_param = %s ORDER BY t1.time_saved DESC LIMIT 1"""
     cur.execute(sql, [uuid])
     data = cur.fetchall()
     if data:
