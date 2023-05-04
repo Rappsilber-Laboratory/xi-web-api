@@ -243,6 +243,7 @@ def get_resultset_search_metadata(cur, uuids, uuid_dict):
         if resultset_id in uuid_dict:
             group = uuid_dict[resultset_id]
             rs_row['group'] = group
+            rs_row['s_config'] = json.loads(rs_row['s_config'])
         resultsets[resultset_id] = rs_row
     return mainscore, resultsets
 
@@ -254,10 +255,14 @@ def get_matches(cur, uuids, main_score_index):
                     CASE WHEN rm.site2 IS NOT NULL THEN rm.site2 ELSE m.site2 END AS s2, 
                     rm.scores[%(score_idx)s] AS sc, m.crosslinker_id AS cl,
                     m.search_id AS si, m.calc_mass AS cm, m.assumed_prec_charge AS pc_c, m.assumed_prec_mz AS pc_mz,
-                    ms.spectrum_id AS sp_id, rm.resultset_id AS rsi
+                    ms.spectrum_id AS sp_id, rm.resultset_id AS rs_id,
+                    s.precursor_mz AS pc_mz, s.precursor_charge AS pc_c, s.precursor_intensity AS pc_i, 
+                    s.scan_number AS sn, s.scan_index AS sc_i,
+                    s.retention_time AS rt, s.run_id AS src, s.peaklist_id AS plf
                 FROM ResultMatch AS rm
                     JOIN match AS m ON rm.match_id = m.id
                     JOIN matchedspectrum as ms ON rm.match_id = ms.match_id
+                    JOIN spectrum as s ON ms.spectrum_id = s.id
                     WHERE rm.resultset_id IN %(uuids)s
                     AND m.site1 >0 AND m.site2 >0
                     AND rm.top_ranking = TRUE;"""
