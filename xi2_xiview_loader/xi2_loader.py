@@ -156,13 +156,14 @@ def create_app(config='database.ini'):
     def get_data_object(uuid_param):
         """ Connect to the PostgreSQL database server """
 
+
         if '.' in uuid_param:
             groups = uuid_param.split('.')
             uuid_dict = {s.split('~')[0]: s.split('~')[1] for s in groups}
             uuids = list(uuid_dict.keys())
         else:
             uuids = [uuid_param]
-            uuid_dict = uuid_param
+            uuid_dict = {}
 
         conn = None
         data = {}
@@ -237,9 +238,13 @@ def get_resultset_search_metadata(cur, uuids, uuid_dict):
     mainscore = resultset_meta_cur[0][3]
     resultsets = {}
     for rs_row in resultset_meta_cur:
+        resultset_id = str(rs_row[5])
+        group = None
+        if resultset_id in uuid_dict:
+            group = uuid_dict[resultset_id]
         rs = {
-            "group": uuid_dict[str(rs_row[5])],
-            "id": rs_row[5],
+            "group": group,
+            "id": resultset_id,
             "rs_name": rs_row[0],
             "rs_note": rs_row[1],
             "rs_config": rs_row[2],
