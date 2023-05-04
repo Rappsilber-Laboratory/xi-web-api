@@ -6,6 +6,8 @@ import psycopg2  # todo - use sqlalchemy instead? LK: There's also flask_sqlalch
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
+#  todo - use psycopg2.extras import RealDictCursor
+
 def create_app(config='database.ini'):
     """
     Create the flask app.
@@ -146,6 +148,11 @@ def create_app(config='database.ini'):
         # uuid = request.args.get('uuid')
         return app.send_static_file('network.html')
 
+    @app.route('/spectra.html', methods=['GET'])
+    def spectra():
+        # uuid = request.args.get('uuid')
+        return app.send_static_file('spectra.html')
+
     def get_data_object(uuid_param):
         """ Connect to the PostgreSQL database server """
 
@@ -168,7 +175,6 @@ def create_app(config='database.ini'):
             cur = conn.cursor()
 
             data["sid"] = uuid_param
-            data["group_names"] = uuid_dict
             mainscore, data["searches"] = get_resultset_search_metadata(cur, uuids, uuid_dict)
             data["matches"], peptide_clause = get_matches(cur, uuids, mainscore)
             data["peptides"], protein_clause = get_peptides(cur, peptide_clause)

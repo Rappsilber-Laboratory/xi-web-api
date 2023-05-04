@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Spectra</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <meta name="description" content="common platform for downstream analysis of CLMS data"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+    <script type="text/javascript" src="./xiview.js"></script>
+</head>
+
+<body>
+<!-- Main -->
+<div id="main">
+    <div class="mainContent">
+        <div class="page-header">
+            <i class="fa fa-home fa-xi" onclick="window.location = '../history/history.html';"
+               title="Return to search history"></i>
+            <span class="headerLabel">
+
+                    </span>
+            <p id="expDropdownPlaceholder"></p>
+            <button class='btn btn-1 btn-1a' onclick="window.location = './network.php'+window.location.search;"
+                    title="View results">Done
+            </button>
+        </div> <!-- page-header -->
+        <div id="topDiv"></div>
+        <div id="bottomDiv"></div>
+    </div>
+    <div class="controls">
+        <span id="filterPlaceholder"></span>
+    </div>
+</div><!-- end MAIN -->
+
+<script>
+    //<![CDATA[
+    xiview.validationPage();
+    //]]>
+</script>
+</body>
+</html>
