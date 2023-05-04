@@ -254,7 +254,7 @@ def get_matches(cur, uuids, main_score_index):
                     CASE WHEN rm.site2 IS NOT NULL THEN rm.site2 ELSE m.site2 END AS s2, 
                     rm.scores[%(score_idx)s] AS sc, m.crosslinker_id AS cl,
                     m.search_id AS si, m.calc_mass AS cm, m.assumed_prec_charge AS pc_c, m.assumed_prec_mz AS pc_mz,
-                    ms.spectrum_id AS pd_id, rm.resultset_id AS rsi
+                    ms.spectrum_id AS sp_id, rm.resultset_id AS rsi
                 FROM ResultMatch AS rm
                     JOIN match AS m ON rm.match_id = m.id
                     JOIN matchedspectrum as ms ON rm.match_id = ms.match_id
