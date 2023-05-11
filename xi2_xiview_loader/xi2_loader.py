@@ -75,7 +75,7 @@ def create_app(config='database.ini'):
 
     @app.route('/save_layout', methods=['POST'])
     def save_layout():
-        uuid = request.form['uuid']
+        uuid = request.form['sid']
         layout = request.form['layout']
         description = request.form['name']
         conn = None
@@ -107,7 +107,7 @@ def create_app(config='database.ini'):
     @app.route('/load_layout', methods=['POST'])
     def load_layout():
         # actually returns all different layouts available
-        uuid = request.form['uuid']
+        uuid = request.form['sid']
         conn = None
         try:
             # connect to the PostgreSQL server
@@ -255,7 +255,7 @@ def get_matches(cur, uuids, main_score_index):
                     CASE WHEN rm.site2 IS NOT NULL THEN rm.site2 ELSE m.site2 END AS s2, 
                     rm.scores[%(score_idx)s] AS sc, m.crosslinker_id AS cl,
                     m.search_id AS si, m.calc_mass AS cm, m.assumed_prec_charge AS pc_c, m.assumed_prec_mz AS pc_mz,
-                    ms.spectrum_id AS sp_id, rm.resultset_id AS rs_id,
+                    ms.spectrum_id AS sp, rm.resultset_id AS rs_id,
                     s.precursor_mz AS pc_mz, s.precursor_charge AS pc_c, s.precursor_intensity AS pc_i, 
                     s.scan_number AS sn, s.scan_index AS sc_i,
                     s.retention_time AS rt, s.run_id AS src, s.peaklist_id AS plf
