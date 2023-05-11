@@ -243,7 +243,7 @@ def get_resultset_search_metadata(cur, uuids, uuid_dict):
         if resultset_id in uuid_dict:
             group = uuid_dict[resultset_id]
             rs_row['group'] = group
-            rs_row['s_config'] = json.loads(rs_row['s_config'])
+        rs_row['s_config'] = json.loads(rs_row['s_config'])
         resultsets[resultset_id] = rs_row
     return mainscore, resultsets
 
