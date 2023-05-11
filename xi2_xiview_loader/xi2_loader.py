@@ -3,10 +3,11 @@ import re
 from configparser import ConfigParser
 
 import psycopg2  # todo - use sqlalchemy instead? LK: There's also flask_sqlalchemy
+from psycopg2.extras import RealDictCursor
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
-#  todo - use psycopg2.extras import RealDictCursor
+
 
 def create_app(config='database.ini'):
     """
@@ -74,7 +75,7 @@ def create_app(config='database.ini'):
 
     @app.route('/save_layout', methods=['POST'])
     def save_layout():
-        uuid = request.form['uuid']
+        uuid = request.form['sid']
         layout = request.form['layout']
         description = request.form['name']
         conn = None
@@ -106,7 +107,7 @@ def create_app(config='database.ini'):
     @app.route('/load_layout', methods=['POST'])
     def load_layout():
         # actually returns all different layouts available
-        uuid = request.form['uuid']
+        uuid = request.form['sid']
         conn = None
         try:
             # connect to the PostgreSQL server
@@ -173,7 +174,7 @@ def create_app(config='database.ini'):
             conn = psycopg2.connect(**db_info)
 
             # create a cursor
-            cur = conn.cursor()
+            cur = conn.cursor(cursor_factory=RealDictCursor)
 
             data["sid"] = uuid_param
             mainscore, data["searches"] = get_resultset_search_metadata(cur, uuids, uuid_dict)
@@ -225,8 +226,8 @@ def create_app(config='database.ini'):
 
 def get_resultset_search_metadata(cur, uuids, uuid_dict):
     sql = """
-                SELECT rs.name, rs.note, rs.config, rs.main_score, rst.name,
-                      rs.id, s.name, s.config, s.note, s.id
+                SELECT rs.name AS rs_name, rs.note AS rs_note, rs.config AS rs_config, rs.main_score AS rs_main_score, rst.name AS resultset_type,
+                      rs.id AS id, s.name AS s_name, s.config AS s_config, s.note AS s_note, s.id AS s_id
                  FROM resultset AS rs
                   LEFT JOIN resultsettype AS rst ON (rs.rstype_id = rst.id)
                   LEFT JOIN ResultSearch AS result_search ON (rs.id = result_search.resultset_id)
@@ -235,41 +236,33 @@ def get_resultset_search_metadata(cur, uuids, uuid_dict):
                            """
     cur.execute(sql, {'uuids': tuple(uuids)})
     resultset_meta_cur = cur.fetchall()
-    mainscore = resultset_meta_cur[0][3]
+    mainscore = 0 #  resultset_meta_cur[0].main_score #  taking first resultsets mainscore as overall main score
     resultsets = {}
     for rs_row in resultset_meta_cur:
-        resultset_id = str(rs_row[5])
-        group = None
+        resultset_id = str(rs_row['id'])
         if resultset_id in uuid_dict:
             group = uuid_dict[resultset_id]
-        rs = {
-            "group": group,
-            "id": resultset_id,
-            "rs_name": rs_row[0],
-            "rs_note": rs_row[1],
-            "rs_config": rs_row[2],
-            "rs_mainscore": rs_row[3],
-            "resultsettype": rs_row[4],
-            "s_id": rs_row[9],
-            "s_name": rs_row[6],
-            "s_config": json.loads(rs_row[7]),
-            "s_note": rs_row[8]
-        }
-        resultsets[rs["id"]] = rs
+            rs_row['group'] = group
+        rs_row['s_config'] = json.loads(rs_row['s_config'])
+        resultsets[resultset_id] = rs_row
     return mainscore, resultsets
 
 
 def get_matches(cur, uuids, main_score_index):
     # todo - the join to matchedspectrum for cleavable crosslinker - needs a GROUP BY match_id?'
-    sql = """SELECT m.id, m.pep1_id, m.pep2_id, 
-                    CASE WHEN rm.site1 IS NOT NULL THEN rm.site1 ELSE m.site1 END, 
-                    CASE WHEN rm.site2 IS NOT NULL THEN rm.site2 ELSE m.site2 END, 
-                    rm.scores[%(score_idx)s], m.crosslinker_id,
-                    m.search_id, m.calc_mass, m.assumed_prec_charge, m.assumed_prec_mz,
-                    ms.spectrum_id, rm.resultset_id
+    sql = """SELECT m.id AS id, m.pep1_id AS pi1, m.pep2_id AS pi2, 
+                    CASE WHEN rm.site1 IS NOT NULL THEN rm.site1 ELSE m.site1 END AS s1, 
+                    CASE WHEN rm.site2 IS NOT NULL THEN rm.site2 ELSE m.site2 END AS s2, 
+                    rm.scores[%(score_idx)s] AS sc, m.crosslinker_id AS cl,
+                    m.search_id AS si, m.calc_mass AS cm, m.assumed_prec_charge AS pc_c, m.assumed_prec_mz AS pc_mz,
+                    ms.spectrum_id AS sp, rm.resultset_id AS rs_id,
+                    s.precursor_mz AS pc_mz, s.precursor_charge AS pc_c, s.precursor_intensity AS pc_i, 
+                    s.scan_number AS sn, s.scan_index AS sc_i,
+                    s.retention_time AS rt, s.run_id AS src, s.peaklist_id AS plf
                 FROM ResultMatch AS rm
                     JOIN match AS m ON rm.match_id = m.id
                     JOIN matchedspectrum as ms ON rm.match_id = ms.match_id
+                    JOIN spectrum as s ON ms.spectrum_id = s.id
                     WHERE rm.resultset_id IN %(uuids)s
                     AND m.site1 >0 AND m.site2 >0
                     AND rm.top_ranking = TRUE;"""
@@ -282,24 +275,10 @@ def get_matches(cur, uuids, main_score_index):
             break
 
         for match_row in match_rows:
-            peptide1_id = match_row[1]
-            peptide2_id = match_row[2]
-            search_id = match_row[7]
-            match = {
-                "id": match_row[0],
-                "pi1": peptide1_id,
-                "pi2": peptide2_id,
-                "s1": match_row[3],
-                "s2": match_row[4],
-                "sc": match_row[5],
-                "cl": match_row[6],
-                "si": search_id,
-                "cm": match_row[8],
-                "pc_c": match_row[9],
-                "pc_mz": match_row[10],
-                "sp_id": match_row[11],
-                "rsi": match_row[12]
-            }
+            peptide1_id = match_row['pi1']
+            peptide2_id = match_row['pi2']
+            search_id = match_row['si']
+
             if search_id in search_peptide_ids.keys():
                 peptide_ids = search_peptide_ids[search_id]
             else:
@@ -310,7 +289,7 @@ def get_matches(cur, uuids, main_score_index):
             if peptide2_id is not None:
                 peptide_ids.add(peptide2_id)
 
-            matches.append(match)
+            matches.append(match_row)
 
     # create sql clause that selects peptides by id and resultset
     # (search_id = a AND id in(x,y,z)) OR (search_id = b AND (...)) OR ...
@@ -339,12 +318,12 @@ def get_matches(cur, uuids, main_score_index):
 
 def get_peptides(cur, peptide_clause):
     if peptide_clause != "()":
-        sql = """SELECT mp.id, mp.search_id AS search_uuid,
-                                mp.sequence AS sequence,
+        sql = """SELECT mp.id AS id, mp.search_id AS search_id,
+                                mp.sequence AS seq_mods,
                                 mp.modification_ids AS mod_ids,
-                                mp.modification_position AS mod_positions,
-                                array_agg(p.accession) AS proteins,
-                                array_agg(pp.start) AS positions
+                                mp.modification_position AS mod_pos,
+                                array_agg(p.accession) AS prt,
+                                array_agg(pp.start) AS pos
                                     FROM modifiedpeptide AS mp
                                     JOIN peptideposition AS pp
                                     ON mp.id = pp.mod_pep_id AND mp.search_id = pp.search_id
@@ -361,17 +340,9 @@ def get_peptides(cur, peptide_clause):
             if not peptide_rows:
                 break
             for peptide_row in peptide_rows:
-                search_id = peptide_row[1]
-                prots = peptide_row[5]
-                peptide = {
-                    "id": peptide_row[0],
-                    "search_id": peptide_row[1],
-                    "seq_mods": peptide_row[2],
-                    "mod_ids": peptide_row[3],
-                    "mod_pos": peptide_row[4],
-                    "prt": prots,
-                    "pos": peptide_row[6]
-                }
+                search_id = peptide_row['search_id']
+                prots = peptide_row['prt']
+
                 if search_id in search_protein_ids:
                     protein_ids = search_protein_ids[search_id]
                 else:
@@ -381,7 +352,7 @@ def get_peptides(cur, peptide_clause):
                 for prot in prots:
                     protein_ids.add(prot)
 
-                peptides.append(peptide)
+                peptides.append(peptide_row)
 
         # create sql clause that selects proteins by id and resultset
         # (search_id = a AND id in(x,y,z)) OR (search_id = b AND (...)) OR ...
@@ -407,33 +378,25 @@ def get_peptides(cur, peptide_clause):
 
 def get_proteins(cur, protein_clause):
     if protein_clause != "()":
-        sql = """SELECT id, name, accession, sequence, search_id, is_decoy FROM protein
+        sql = """SELECT accession AS id, name, accession, sequence, search_id, is_decoy FROM protein
                                 WHERE (""" + protein_clause + """)
                                 """
         cur.execute(sql)
         protein_rows = cur.fetchall()
         proteins = []
         for protein_row in protein_rows:
-            protein = {
-                "id": protein_row[2],
-                "name": protein_row[1],
-                "accession": protein_row[2],
-                "sequence": protein_row[3],
-                "search_id": protein_row[4],
-                "is_decoy": protein_row[5]
-            }
-            proteins.append(protein)
+            proteins.append(protein_row)
         return proteins
 
 
 def get_layout(cur, uuid):
-    sql = """SELECT t1.description, t1.layout FROM layout AS t1 
+    sql = """SELECT t1.description AS name, t1.layout FROM layout AS t1 
         WHERE t1.url_param = %s ORDER BY t1.time_saved DESC LIMIT 1"""
     cur.execute(sql, [uuid])
     data = cur.fetchall()
     if data:
         xinet_layout = {
-            "name": data[0][0],
-            "layout": data[0][1]
+            "name": data[0]['name'],
+            "layout": data[0]['t1']
         }
         return xinet_layout
