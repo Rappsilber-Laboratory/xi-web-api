@@ -205,8 +205,8 @@ def create_app():
 
     @app.route('/get_peaklist', methods=['GET'])
     def get_peaklist():
-        uuid = request.args.get('id')
-        return jsonify(get_peaklist_object(uuid))
+        id = request.args.get('id')
+        return jsonify(get_peaklist_object(id, "search id"))
 
     # following doesn't look very secure
     # @app.route('/save_layout', methods=['POST'])
@@ -318,10 +318,10 @@ def create_app():
                 raise error
             return data
 
-    def get_peaklist_object(spectrum_uuid):
+    def get_peaklist_object(spectrum_id, search_id):
         """ Connect to the PostgreSQL database server """
         conn = None
-        data = []
+        data = {}
         error = None
         try:
             # connect to the PostgreSQL server
@@ -332,8 +332,10 @@ def create_app():
 
             sql = "SELECT intensity, mz FROM spectrum WHERE id = %s"
 
-            cur.execute(sql, [spectrum_uuid])
-            data = cur.fetchall()[0]
+            cur.execute(sql, [spectrum_id])
+            resultset = cur.fetchall()[0]
+            data["intensity"] = resultset[0]
+            data["mz"] = resultset[1]
             print("finished")
             # close the communication with the PostgreSQL
             cur.close()
@@ -432,7 +434,7 @@ def get_matches(cur, uuid):
                 "cm": match_row[12],
                 "pc_c": match_row[7],
                 "pc_mz": match_row[11],  # experimental mz
-                "sp_id": match_row[2],
+                "sp": match_row[2],
                 "sd_ref": match_row[3],  # spectra data ref
                 "pass": match_row[8],  # pass threshold
                 "r": match_row[9],  # rank
@@ -482,7 +484,10 @@ def get_peptides(cur, peptide_clause):
                     array_agg(pp.dbsequence_ref) AS proteins,
                     array_agg(pp.pep_start) AS positions,
                     array_agg(pp.is_decoy) AS decoys,
-                    mp.link_site1
+                    mp.link_site1,
+                    mp.mod_accessions as mod_accs,
+                    mp.mod_positions as mod_pos,
+                    mp.mod_monoiso_mass_deltas as mod_masses                     
                         FROM modifiedpeptide AS mp
                         JOIN peptideevidence AS pp
                         ON mp.id = pp.peptide_ref AND mp.upload_id = pp.upload_id
@@ -506,7 +511,10 @@ def get_peptides(cur, peptide_clause):
                     "prt": prots,
                     "pos": peptide_row[4],
                     "is_decoy": peptide_row[5],
-                    "linkSite": peptide_row[6]
+                    "linkSite": peptide_row[6],
+                    "mod_accs": peptide_row[7],
+                    "mod_pos": peptide_row[8],
+                    "mod_masses": peptide_row[9],
                 }
                 if search_id in search_protein_ids:
                     protein_ids = search_protein_ids[search_id]
