@@ -24,7 +24,7 @@ USER appuser
 COPY static ./static
 COPY templates ./templates
 COPY tests ./tests
-COPY xi-web-api ./xi-web-api
+COPY xi_web_api ./xi_web_api
 COPY .env .
 COPY default.database.ini .
 COPY .kubernetes.yml .

@@ -1,4 +1,4 @@
-from xi2_xiview_loader import create_app
+from xi_web_api import create_app
 import pytest
 from flask import url_for
 import os
