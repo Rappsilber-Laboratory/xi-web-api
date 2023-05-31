@@ -1,3 +1,5 @@
+import struct
+
 from flask import Flask, jsonify, render_template, request
 from flask_cors import CORS
 import psycopg2  # todo - use sqlalchemy instead? LK: There's also flask_sqlalchemy
@@ -45,9 +47,9 @@ def create_app():
 
     # Load flask config
     if app.env == 'development':
-        app.config.from_object('xi2_xiview_loader.config.DevelopmentConfig')
+        app.config.from_object('xi-web-api.config.DevelopmentConfig')
     else:
-        app.config.from_object('xi2_xiview_loader.config.ProductionConfig')
+        app.config.from_object('xi-web-api.config.ProductionConfig')
         try:
             app.config.from_envvar('XI2XIVIEWLOADER_SETTINGS')
         except (FileNotFoundError, RuntimeError):
@@ -165,7 +167,7 @@ def create_app():
         filename_clean = re.sub(r'[^0-9a-zA-Z-]+', '-', file)
 
         conn = None
-        uuid  = None
+        uuid = None
         error = None
         try:
             # connect to the PostgreSQL server
@@ -334,8 +336,8 @@ def create_app():
 
             cur.execute(sql, [spectrum_id])
             resultset = cur.fetchall()[0]
-            data["intensity"] = resultset[0]
-            data["mz"] = resultset[1]
+            data["intensity"] = struct.unpack('%sd' % (len(resultset[0]) // 8), resultset[0])
+            data["mz"] = struct.unpack('%sd' % (len(resultset[1]) // 8), resultset[1])
             print("finished")
             # close the communication with the PostgreSQL
             cur.close()
