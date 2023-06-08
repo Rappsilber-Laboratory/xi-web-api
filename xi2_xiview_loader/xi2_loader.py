@@ -1,5 +1,6 @@
 import json
 import re
+from time import time
 from configparser import ConfigParser
 
 import psycopg2  # todo - use sqlalchemy instead? LK: There's also flask_sqlalchemy
@@ -233,7 +234,12 @@ def get_resultset_search_metadata(cur, uuids, uuid_dict):
                   LEFT JOIN Search AS s ON (result_search.search_id = s.id)
                 WHERE rs.id IN %(uuids)s
                            """
+    print('ResultSet & Search metadata query:')
+    print(' '.join(sql.split()))
+    before = time()
     cur.execute(sql, {'uuids': tuple(uuids)})
+    after = time()
+    print(after - before)
     resultset_meta_cur = cur.fetchall()
     mainscore = 0  # resultset_meta_cur[0].main_score #  taking first resultsets mainscore as overall main score
     resultsets = {}
@@ -265,7 +271,12 @@ def get_matches(cur, uuids, main_score_index):
                     WHERE rm.resultset_id IN %(uuids)s
                     AND m.site1 >0 AND m.site2 >0
                     AND rm.top_ranking = TRUE;"""
+    print('Matches query:')
+    print(' '.join(sql.split()))
+    before = time()
     cur.execute(sql, {'uuids': tuple(uuids), 'score_idx': main_score_index})
+    after = time()
+    print(after - before)
     matches = []
     search_peptide_ids = {}
     while True:
@@ -330,8 +341,12 @@ def get_peptides(cur, peptide_clause):
                                     ON pp.protein_id = p.id AND pp.search_id = p.search_id
                                 WHERE """ + peptide_clause + """ GROUP BY mp.id, mp.search_id, mp.sequence
                                """
-        # print(sql);
+        print('Peptides query:')
+        print(' '.join(sql.split()))
+        before = time()
         cur.execute(sql)
+        after = time()
+        print(after - before)
         peptides = []
         search_protein_ids = {}
         while True:
@@ -380,7 +395,12 @@ def get_proteins(cur, protein_clause):
         sql = """SELECT accession AS id, name, accession, sequence, search_id, is_decoy FROM protein
                                 WHERE (""" + protein_clause + """)
                                 """
+        print('Proteins query:')
+        print(' '.join(sql.split()))
+        before = time()
         cur.execute(sql)
+        after = time()
+        print(after - before)
         protein_rows = cur.fetchall()
         proteins = []
         for protein_row in protein_rows:
