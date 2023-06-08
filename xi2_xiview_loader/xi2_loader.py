@@ -8,7 +8,6 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 
-
 def create_app(config='database.ini'):
     """
     Create the flask app.
@@ -65,8 +64,8 @@ def create_app(config='database.ini'):
         if uuid_param is None or not re.match(r'^[a-zA-Z0-9.~_-]+$', uuid_param):
             return jsonify({"error": "Invalid id(s)"}), 400
 
-        # return json.dumps(get_data_object(uuid_param)) # think this will be more efficient as it doesn't pretty print
-        return jsonify(get_data_object(uuid_param))
+        return json.dumps(get_data_object(uuid_param)) # think this will be more efficient as it doesn't pretty print
+        # return jsonify(get_data_object(uuid_param))
 
     @app.route('/get_peaklist', methods=['GET'])
     def get_peaklist():
@@ -157,7 +156,6 @@ def create_app(config='database.ini'):
     def get_data_object(uuid_param):
         """ Connect to the PostgreSQL database server """
 
-
         if '.' in uuid_param:
             groups = uuid_param.split('.')
             uuid_dict = {s.split('~')[0]: s.split('~')[1] for s in groups}
@@ -226,7 +224,8 @@ def create_app(config='database.ini'):
 
 def get_resultset_search_metadata(cur, uuids, uuid_dict):
     sql = """
-                SELECT rs.name AS rs_name, rs.note AS rs_note, rs.config AS rs_config, rs.main_score AS rs_main_score, rst.name AS resultset_type,
+                SELECT rs.name AS rs_name, rs.note AS rs_note, rs.config AS rs_config, rs.main_score AS rs_main_score, 
+                      rst.name AS resultset_type,
                       rs.id AS id, s.name AS s_name, s.config AS s_config, s.note AS s_note, s.id AS s_id
                  FROM resultset AS rs
                   LEFT JOIN resultsettype AS rst ON (rs.rstype_id = rst.id)
@@ -236,7 +235,7 @@ def get_resultset_search_metadata(cur, uuids, uuid_dict):
                            """
     cur.execute(sql, {'uuids': tuple(uuids)})
     resultset_meta_cur = cur.fetchall()
-    mainscore = 0 #  resultset_meta_cur[0].main_score #  taking first resultsets mainscore as overall main score
+    mainscore = 0  # resultset_meta_cur[0].main_score #  taking first resultsets mainscore as overall main score
     resultsets = {}
     for rs_row in resultset_meta_cur:
         resultset_id = str(rs_row['id'])
