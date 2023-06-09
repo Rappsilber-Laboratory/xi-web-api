@@ -342,7 +342,7 @@ def get_peptides(cur, peptide_clause):
                                 WHERE """ + peptide_clause + """ GROUP BY mp.id, mp.search_id, mp.sequence
                                """
         print('Peptides query:')
-        print(' '.join(sql.split()))
+        # print(' '.join(sql.split()))
         before = time()
         cur.execute(sql)
         after = time()

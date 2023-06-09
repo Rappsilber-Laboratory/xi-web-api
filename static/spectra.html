@@ -36,7 +36,9 @@
 
 <script>
     //<![CDATA[
-    xiview.validationPage();
+        window.xiAnnotRoot = "http://xi.bioanalytik.tu-berlin.de:8084/xiAnnotator/";
+        window.peakListUrl = "/get_peaklist"; // todo make this a param
+        xiview.validationPage("XI2", "/get_data");
     //]]>
 </script>
 </body>
