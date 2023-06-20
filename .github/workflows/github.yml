@@ -44,3 +44,4 @@ jobs:
         context: .
         push: true
         tags: ${{ env.GHCR_REGISTRY }}/${{ env.USERNAME }}/${{ env.IMAGE_NAME }}:latest
+        password: ${{ secrets.GITHUB_TOKEN }}
