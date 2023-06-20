@@ -53,7 +53,7 @@ jobs:
     env:
       DOCKER_PULL_SECRET: pride-gitlab-docker-secret
       DATABASE_INI: application-db-config
-      IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA
+      K8S_NAMESPACE: proteomics
 #    if: github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout repository
@@ -62,12 +62,17 @@ jobs:
       - name: Install gettext
         run: sudo apt-get update && sudo apt-get install -y gettext tzdata coreutils
 
-      - name: Set up Kubernetes environment
-        run: |
-          mkdir -p ~/.kube
-          echo ${{ secrets.KUBE_CONFIG }} > kubeconfig
-          base64 -d kubeconfig > ~/.kube/config
-          kubectl config get-contexts
+      - name: 1 test
+        run: mkdir -p ~/.kube
+
+      - name: 2 test
+        run: echo ${{ secrets.KUBE_CONFIG }} > kubeconfig
+
+      - name: 3 test
+        run: base64 -d kubeconfig > ~/.kube/config
+
+      - name: 4 test
+        run: kubectl config get-contexts
 
       - name: Create a Namespace if not exists
         run: kubectl create namespace ${{ env.K8S_NAMESPACE }} || true
