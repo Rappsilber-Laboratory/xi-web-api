@@ -63,10 +63,11 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y gettext tzdata coreutils
 
       - name: Set up Kubernetes environment
-        uses: Azure/k8s-set-context@v1
-        with:
-          kubeconfig: ${{ secrets.KUBE_CONFIG }}
-          context-name: "kubeconfig"
+        run: |
+          mkdir -p ~/.kube
+          echo ${{ secrets.KUBE_CONFIG }} > kubeconfig
+          base64 -d kubeconfig > ~/.kube/config
+          kubectl config get-contexts
 
       - name: Create a Namespace if not exists
         run: kubectl create namespace ${{ env.K8S_NAMESPACE }} || true
