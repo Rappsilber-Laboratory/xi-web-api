@@ -11,7 +11,7 @@ env:
   USERNAME: ${{ github.repository_owner }}
 
 jobs:
-  build:
+  docker_build:
     runs-on: ubuntu-latest
 
     steps:
@@ -25,8 +25,8 @@ jobs:
               -e "s|\${APP_ENTRY}|${{ env.APP_ENTRY }}|g" \
               .Dockerfile > Dockerfile
 
-    - name: Print Dockerfile
-      run: cat Dockerfile
+#    - name: Print Dockerfile
+#      run: cat Dockerfile
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
@@ -44,3 +44,56 @@ jobs:
         context: .
         push: true
         tags: ${{ env.GHCR_REGISTRY }}/${{ env.USERNAME }}/${{ env.IMAGE_NAME }}:latest
+
+
+  deploy:
+    needs: docker_build
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_PULL_SECRET: pride-gitlab-docker-secret
+      DATABASE_INI: application-db-config
+      IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install gettext
+        run: sudo apt-get update && sudo apt-get install -y gettext tzdata coreutils
+
+      - name: Set up Kubernetes environment
+        uses: generic/k8s-set-context@v1
+        with:
+          kubeconfig: ${{ secrets.KUBECONFIG }}
+          context-name: ${{ env.K8S_NAMESPACE }}
+
+      - name: Create a Namespace if not exists
+        run: kubectl create namespace ${{ env.K8S_NAMESPACE }} || true
+
+      - name: Delete the docker pull secrete if exist
+        run: kubectl -n ${{ env.K8S_NAMESPACE }} delete secret ${{ env.DOCKER_PULL_SECRET }} || true
+
+      - name: Create a Docker registry secret with new image
+        run: |
+          kubectl -n ${{ env.K8S_NAMESPACE }} create secret docker-registry ${{ env.DOCKER_PULL_SECRET }} \
+          --docker-server=${{ env.GHCR_REGISTRY }} \
+          --docker-username=${{ secrets.GITHUB_ACTOR }} \
+          --docker-password=${{ secrets.GHCR_TOKEN }}
+
+      - name: Substitute environment variables
+        run: < default.database.ini > database.ini
+
+      - name: Create ConfigMap
+        run: kubectl -n ${{ env.K8S_NAMESPACE }} create configmap ${{ env.DATABASE_INI }} --from-file=database.ini || true
+
+      - name: Replace configmap if it already exists
+        run: kubectl -n ${{ env.K8S_NAMESPACE }} create configmap ${{ env.DATABASE_INI }} --from-file=database.ini -o yaml --dry-run=client | kubectl replace -f -
+
+      - name: Substitute environment variables
+        run: envsubst < .kubernetes.yml > kubernetes.yml
+
+      - name: Print kubernetes.yml
+        run: cat kubernetes.yml
+
+#      - name: Deploy to Kubernetes
+#        run: kubectl -n ${{ env.K8S_NAMESPACE }} apply -f kubernetes.yml
