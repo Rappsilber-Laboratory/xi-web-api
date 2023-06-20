@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - pride
+  workflow_dispatch:
 
 env:
   IMAGE_NAME: xi2_xiview_loader_image
@@ -53,7 +54,7 @@ jobs:
       DOCKER_PULL_SECRET: pride-gitlab-docker-secret
       DATABASE_INI: application-db-config
       IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA
-
+#    if: github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -65,7 +66,7 @@ jobs:
         uses: Azure/k8s-set-context@v1
         with:
           kubeconfig: ${{ secrets.KUBECONFIG }}
-          context-name: ${{ env.K8S_NAMESPACE }}
+          context-name: "kubeconfig"
 
       - name: Create a Namespace if not exists
         run: kubectl create namespace ${{ env.K8S_NAMESPACE }} || true
