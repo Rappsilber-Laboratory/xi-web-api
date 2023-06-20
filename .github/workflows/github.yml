@@ -18,6 +18,14 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
+    - name: create Dockerfile with environment variables
+    - run: |
+          sed -e "s|\${PORT}|${{ env.PORT }}|g" \
+              -e "s|\${URL_PREFIX}|${{ env.URL_PREFIX }}|g" \
+              -e "s|\${APP_ENTRY}|${{ env.APP_ENTRY }}|g" \
+              .Dockerfile > Dockerfile
+    - run: cat Dockerfile
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
 
