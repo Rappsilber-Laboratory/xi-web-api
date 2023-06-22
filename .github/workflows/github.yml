@@ -50,6 +50,7 @@ jobs:
   deploy:
     needs: docker_build
     runs-on: ubuntu-latest
+    environment: 'prod'
     env:
       DOCKER_PULL_SECRET: pride-gitlab-docker-secret
       DATABASE_INI: application-db-config
