@@ -109,5 +109,5 @@ jobs:
       - name: Print kubernetes.yml
         run: cat kubernetes.yml
 
-#      - name: Deploy to Kubernetes
-#        run: kubectl -n ${{ vars.K8S_NAMESPACE }} apply -f kubernetes.yml
+      - name: Deploy to Kubernetes
+        run: kubectl -n ${{ vars.K8S_NAMESPACE }} apply -f kubernetes.yml
