@@ -100,7 +100,15 @@ jobs:
         run: kubectl -n ${{ vars.K8S_NAMESPACE }} create configmap ${{ env.DATABASE_INI }} --from-file=database.ini -o yaml --dry-run=client | kubectl replace -f -
 
       - name: Substitute environment variables
-        run: envsubst < .kubernetes.yml > kubernetes.yml
+        run: |
+                  sed -e "s|\${PORT}|${{ env.PORT }}|g" \
+                      -e "s|\${node_port}|${{ vars.NODE_PORT }}|g" \
+                      -e "s|\${app_name}|${{ vars.APP_NAME }}|g" \
+                      -e "s|\${k8s_replicas}|${{ vars.K8S_REPLICAS }}|g" \
+                      -e "s|\${K8S_NAMESPACE}|${{ vars.K8S_NAMESPACE }}|g" \
+                      -e "s|\${DATABASE_INI}|${{ env.DATABASE_INI }}|g" \
+                      -e "s|\${IMAGE}|${{ env.GHCR_REGISTRY }}/${{ env.USERNAME }}/${{ env.IMAGE_NAME }}:latest|g" \
+                      .kubernetes.yml > kubernetes.yml
 
       - name: Print kubernetes.yml
         run: cat kubernetes.yml
