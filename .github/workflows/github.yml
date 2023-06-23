@@ -8,7 +8,6 @@ on:
 
 env:
   IMAGE_NAME: xi2_xiview_loader_image
-  GHCR_REGISTRY: ghcr.io
   USERNAME: ${{ github.repository_owner }}
 #  K8S_NAMESPACE: ${{ env.K8S_NAMESPACE }}
 
@@ -36,7 +35,7 @@ jobs:
 #    - name: Login to GHCR
 #      uses: docker/login-action@v1
 #      with:
-#        registry: ${{ env.GHCR_REGISTRY }}
+#        registry: ghcr.io
 #        username: ${{ github.actor }}
 #        password: ${{ secrets.GHCR_TOKEN }}
 #
@@ -45,7 +44,7 @@ jobs:
 #      with:
 #        context: .
 #        push: true
-#        tags: ${{ env.GHCR_REGISTRY }}/${{ env.USERNAME }}/${{ env.IMAGE_NAME }}:latest
+#        tags: ghcr.io/${{ env.USERNAME }}/${{ env.IMAGE_NAME }}:latest
 
 
   deploy:
@@ -65,7 +64,7 @@ jobs:
       k8s_replicas: ${{ vars.K8S_REPLICAS }}
       K8S_NAMESPACE: ${{ vars.K8S_NAMESPACE }}
       DATABASE_INI: ${{ env.DATABASE_INI }}
-      IMAGE: ${{ env.GHCR_REGISTRY }}/${{ env.USERNAME }}/${{ env.IMAGE_NAME }}:latest
+      IMAGE: ghcr.io/${{ env.USERNAME }}/${{ env.IMAGE_NAME }}:latest
 #    if: github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout repository
