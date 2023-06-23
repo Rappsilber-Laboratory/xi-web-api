@@ -54,12 +54,18 @@ jobs:
     environment: 'prod'
     env:
       DOCKER_PULL_SECRET: pride-gitlab-docker-secret
-      DATABASE_INI: application-db-config
       DB_HOST : ${{ vars.DB_HOST }}
       DB_DATABASE_NAME : ${{ vars.DB_DATABASE_NAME }}
       DB_USER : ${{ vars.DB_USER }}
-      DB_PASSWORD : ${{ vars.DB_PASSWORD }}
+      DB_PASSWORD : ${{ secrets.DB_PASSWORD }}
       DB_PORT : ${{ vars.DB_PORT }}
+      PORT: ${{ vars.PORT }}
+      node_port: ${{ vars.NODE_PORT }}
+      app_name: ${{ vars.APP_NAME }}
+      k8s_replicas: ${{ vars.K8S_REPLICAS }}
+      K8S_NAMESPACE: ${{ vars.K8S_NAMESPACE }}
+      DATABASE_INI: ${{ env.DATABASE_INI }}
+      IMAGE: ${{ env.GHCR_REGISTRY }}/${{ env.USERNAME }}/${{ env.IMAGE_NAME }}:latest
 #    if: github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout repository
@@ -90,13 +96,6 @@ jobs:
 
       - name: Substitute database variables by environment variables or variables
         run: envsubst < default.database.ini > database.ini
-#        run: |
-#          sed -e "s|\${DB_HOST}|${{ vars.DB_HOST }}|g" \
-#              -e "s|\${DB_DATABASE_NAME}|${{ vars.DB_DATABASE_NAME }}|g" \
-#              -e "s|\${DB_USER}|${{ vars.DB_USER }}|g" \
-#              -e "s|\${DB_PASSWORD}|${{ vars.DB_PASSWORD }}|g" \
-#              -e "s|\${DB_PORT}|${{ vars.DB_PORT }}|g" \
-#              default.database.ini > database.ini
 
       - name: Print database.ini
         run: cat database.ini
@@ -108,15 +107,7 @@ jobs:
         run: kubectl -n ${{ vars.K8S_NAMESPACE }} create configmap ${{ env.DATABASE_INI }} --from-file=database.ini -o yaml --dry-run=client | kubectl replace -f -
 
       - name: Substitute kubernetes variables by environment variables or variables
-        run: |
-                  sed -e "s|\${PORT}|${{ vars.PORT }}|g" \
-                      -e "s|\${node_port}|${{ vars.NODE_PORT }}|g" \
-                      -e "s|\${app_name}|${{ vars.APP_NAME }}|g" \
-                      -e "s|\${k8s_replicas}|${{ vars.K8S_REPLICAS }}|g" \
-                      -e "s|\${K8S_NAMESPACE}|${{ vars.K8S_NAMESPACE }}|g" \
-                      -e "s|\${DATABASE_INI}|${{ env.DATABASE_INI }}|g" \
-                      -e "s|\${IMAGE}|${{ env.GHCR_REGISTRY }}/${{ env.USERNAME }}/${{ env.IMAGE_NAME }}:latest|g" \
-                      .kubernetes.yml > kubernetes.yml
+        run: envsubst <.kubernetes.yml > kubernetes.yml
 
       - name: Print kubernetes.yml
         run: cat kubernetes.yml
