@@ -64,7 +64,7 @@ jobs:
       k8s_replicas: ${{ vars.K8S_REPLICAS }}
       K8S_NAMESPACE: ${{ vars.K8S_NAMESPACE }}
       DATABASE_INI: ${{ env.DATABASE_INI }}
-      IMAGE: ghcr.io/${{ env.USERNAME }}/${{ env.IMAGE_NAME }}:latest
+      IMAGE: ghcr.io/${{ github.repository_owner }}/xi2_xiview_loader_image:latest
 #    if: github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout repository
@@ -100,10 +100,10 @@ jobs:
         run: cat database.ini
 
       - name: Create ConfigMap
-        run: kubectl -n ${{ vars.K8S_NAMESPACE }} create configmap ${{ env.DATABASE_INI }} --from-file=database.ini || true
+        run: kubectl -n ${{ vars.K8S_NAMESPACE }} create configmap ${{ vars.DATABASE_INI }} --from-file=database.ini || true
 
       - name: Replace configmap if it already exists
-        run: kubectl -n ${{ vars.K8S_NAMESPACE }} create configmap ${{ env.DATABASE_INI }} --from-file=database.ini -o yaml --dry-run=client | kubectl replace -f -
+        run: kubectl -n ${{ vars.K8S_NAMESPACE }} create configmap ${{ vars.DATABASE_INI }} --from-file=database.ini -o yaml --dry-run=client | kubectl replace -f -
 
       - name: Substitute kubernetes variables by environment variables or variables
         run: envsubst <.kubernetes.yml > kubernetes.yml
