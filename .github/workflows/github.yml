@@ -101,7 +101,7 @@ jobs:
 
       - name: Substitute environment variables
         run: |
-                  sed -e "s|\${PORT}|${{ env.PORT }}|g" \
+                  sed -e "s|\${PORT}|${{ vars.PORT }}|g" \
                       -e "s|\${node_port}|${{ vars.NODE_PORT }}|g" \
                       -e "s|\${app_name}|${{ vars.APP_NAME }}|g" \
                       -e "s|\${k8s_replicas}|${{ vars.K8S_REPLICAS }}|g" \
