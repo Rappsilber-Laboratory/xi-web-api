@@ -62,7 +62,6 @@ jobs:
       K8S_NAMESPACE: ${{ vars.K8S_NAMESPACE }}
       DATABASE_INI: ${{ vars.DATABASE_INI }}
       IMAGE: ghcr.io/${{ github.repository_owner }}/xi2_xiview_loader_image:latest
-#    if: github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
