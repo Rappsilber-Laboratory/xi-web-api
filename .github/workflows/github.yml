@@ -87,7 +87,7 @@ jobs:
         run: |
           kubectl -n ${{ vars.K8S_NAMESPACE }} create secret docker-registry ${{ env.DOCKER_PULL_SECRET }} \
           --docker-server=${{ env.GHCR_REGISTRY }} \
-          --docker-username=${{ github.actor }}
+          --docker-username=${{ github.actor }} \
           --docker-password=${{ secrets.GHCR_TOKEN }}
 
       - name: Substitute environment variables
