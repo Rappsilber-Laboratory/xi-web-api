@@ -72,7 +72,7 @@ jobs:
 
       - name: Check environment variables
         run: |
-          echo ${{ env.K8S_NAMESPACE }}
+          echo ${{ vars.K8S_NAMESPACE }}
 
       - name: Use Config
         run: kubectl config use-context ${{ env.K8S_NAMESPACE }}
