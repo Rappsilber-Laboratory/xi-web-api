@@ -60,7 +60,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Install gettext
+      - name: Install tools
         run: sudo apt-get update && sudo apt-get install -y gettext tzdata coreutils
 
       - name: Create kubeconfig
@@ -69,13 +69,6 @@ jobs:
           echo ${{ secrets.KUBE_CONFIG }} > kubeconfig
           base64 -d kubeconfig > ~/.kube/config
           kubectl config get-contexts
-
-      - name: Check environment variables
-        run: |
-          echo ${{ vars.K8S_NAMESPACE }}
-
-#      - name: Use Config
-#        run: kubectl config use-context ${{ vars.K8S_NAMESPACE }}
 
       - name: Create a Namespace if not exists
         run: kubectl create namespace ${{ vars.K8S_NAMESPACE }} || true
@@ -91,13 +84,14 @@ jobs:
           --docker-password=${{ secrets.GHCR_TOKEN }}
 
       - name: Substitute database variables by environment variables or variables
-        run: |
-          sed -e "s|\${DB_HOST}|${{ vars.DB_HOST }}|g" \
-              -e "s|\${DB_DATABASE_NAME}|${{ vars.DB_DATABASE_NAME }}|g" \
-              -e "s|\${DB_USER}|${{ vars.DB_USER }}|g" \
-              -e "s|\${DB_PASSWORD}|${{ vars.DB_PASSWORD }}|g" \
-              -e "s|\${DB_PORT}|${{ vars.DB_PORT }}|g" \
-              default.database.ini > database.ini
+        run: envsubst < default.database.ini > database.ini
+#        run: |
+#          sed -e "s|\${DB_HOST}|${{ vars.DB_HOST }}|g" \
+#              -e "s|\${DB_DATABASE_NAME}|${{ vars.DB_DATABASE_NAME }}|g" \
+#              -e "s|\${DB_USER}|${{ vars.DB_USER }}|g" \
+#              -e "s|\${DB_PASSWORD}|${{ vars.DB_PASSWORD }}|g" \
+#              -e "s|\${DB_PORT}|${{ vars.DB_PORT }}|g" \
+#              default.database.ini > database.ini
 
       - name: Print database.ini
         run: cat database.ini
