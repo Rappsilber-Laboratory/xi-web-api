@@ -63,45 +63,40 @@ jobs:
       - name: Install gettext
         run: sudo apt-get update && sudo apt-get install -y gettext tzdata coreutils
 
-      - name: 1 test
-        run: mkdir -p ~/.kube
-
-      - name: 2 test
-        run: echo ${{ secrets.KUBE_CONFIG }} > kubeconfig
-
-      - name: 3 test
-        run: base64 -d kubeconfig > ~/.kube/config
-
-      - name: 4 test
-        run: kubectl config get-contexts
-
-      - name: Create a Namespace if not exists
-        run: kubectl create namespace ${{ env.K8S_NAMESPACE }} || true
-
-      - name: Delete the docker pull secrete if exist
-        run: kubectl -n ${{ env.K8S_NAMESPACE }} delete secret ${{ env.DOCKER_PULL_SECRET }} || true
-
-      - name: Create a Docker registry secret with new image
+      - name: Create kubeconfig
         run: |
-          kubectl -n ${{ env.K8S_NAMESPACE }} create secret docker-registry ${{ env.DOCKER_PULL_SECRET }} \
-          --docker-server=${{ env.GHCR_REGISTRY }} \
-          --docker-username=${{ github.actor }}/ghcr.io \
-          --docker-password=${{ secrets.GHCR_TOKEN }}
-
-      - name: Substitute environment variables
-        run: < default.database.ini > database.ini
-
-      - name: Create ConfigMap
-        run: kubectl -n ${{ env.K8S_NAMESPACE }} create configmap ${{ env.DATABASE_INI }} --from-file=database.ini || true
-
-      - name: Replace configmap if it already exists
-        run: kubectl -n ${{ env.K8S_NAMESPACE }} create configmap ${{ env.DATABASE_INI }} --from-file=database.ini -o yaml --dry-run=client | kubectl replace -f -
-
-      - name: Substitute environment variables
-        run: envsubst < .kubernetes.yml > kubernetes.yml
-
-      - name: Print kubernetes.yml
-        run: cat kubernetes.yml
+          mkdir -p ~/.kube
+          echo ${{ secrets.KUBE_CONFIG }} | base64 --decode  > ~/.kube/config
+          cat ~/..kube/config
+          kubectl config get-contexts
+#
+#      - name: Create a Namespace if not exists
+#        run: kubectl create namespace ${{ env.K8S_NAMESPACE }} || true
+#
+#      - name: Delete the docker pull secrete if exist
+#        run: kubectl -n ${{ env.K8S_NAMESPACE }} delete secret ${{ env.DOCKER_PULL_SECRET }} || true
+#
+#      - name: Create a Docker registry secret with new image
+#        run: |
+#          kubectl -n ${{ env.K8S_NAMESPACE }} create secret docker-registry ${{ env.DOCKER_PULL_SECRET }} \
+#          --docker-server=${{ env.GHCR_REGISTRY }} \
+#          --docker-username=${{ github.actor }}
+#          --docker-password=${{ secrets.GHCR_TOKEN }}
+#
+#      - name: Substitute environment variables
+#        run: < default.database.ini > database.ini
+#
+#      - name: Create ConfigMap
+#        run: kubectl -n ${{ env.K8S_NAMESPACE }} create configmap ${{ env.DATABASE_INI }} --from-file=database.ini || true
+#
+#      - name: Replace configmap if it already exists
+#        run: kubectl -n ${{ env.K8S_NAMESPACE }} create configmap ${{ env.DATABASE_INI }} --from-file=database.ini -o yaml --dry-run=client | kubectl replace -f -
+#
+#      - name: Substitute environment variables
+#        run: envsubst < .kubernetes.yml > kubernetes.yml
+#
+#      - name: Print kubernetes.yml
+#        run: cat kubernetes.yml
 
 #      - name: Deploy to Kubernetes
 #        run: kubectl -n ${{ env.K8S_NAMESPACE }} apply -f kubernetes.yml
