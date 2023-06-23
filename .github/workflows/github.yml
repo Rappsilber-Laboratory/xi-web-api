@@ -66,8 +66,9 @@ jobs:
       - name: Create kubeconfig
         run: |
           mkdir -p ~/.kube
-          echo ${{ secrets.KUBE_CONFIG }} | base64 --decode  > ~/.kube/config
-          cat ~/..kube/config
+          echo ${{ secrets.KUBE_CONFIG }} > kubeconfig
+          base64 -d kubeconfig > ~/.kube/config
+          cat ~/.kube/config
           kubectl config get-contexts
 #
 #      - name: Create a Namespace if not exists
