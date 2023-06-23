@@ -72,10 +72,10 @@ jobs:
 
       - name: Check environment variables
         run: |
-          echo ${{ process.env.K8S_NAMESPACE }}
+          echo $K8S_NAMESPACE
 
       - name: Use Config
-        run: kubectl config use-context ${{ process.env.K8S_NAMESPACE }}
+        run: kubectl config use-context $K8S_NAMESPACE
 #
 #      - name: Create a Namespace if not exists
 #        run: kubectl create namespace ${{ env.K8S_NAMESPACE }} || true
