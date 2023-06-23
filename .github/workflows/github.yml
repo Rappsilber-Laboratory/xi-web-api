@@ -54,7 +54,7 @@ jobs:
     env:
       DOCKER_PULL_SECRET: pride-gitlab-docker-secret
       DATABASE_INI: application-db-config
-      K8S_NAMESPACE: proteomics
+#      K8S_NAMESPACE: proteomics
 #    if: github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout repository
