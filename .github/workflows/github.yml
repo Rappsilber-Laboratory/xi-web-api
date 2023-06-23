@@ -12,6 +12,7 @@ env:
 
 jobs:
   docker_build:
+    environment: prod
     env:
       PORT: ${{ vars.PORT }}
       URL_PREFIX: ${{ vars.URL_PREFIX }}
@@ -47,6 +48,7 @@ jobs:
 
   deploy:
     needs: docker_build
+    environment: prod
     runs-on: ubuntu-latest
     env:
       DOCKER_PULL_SECRET: pride-gitlab-docker-secret
