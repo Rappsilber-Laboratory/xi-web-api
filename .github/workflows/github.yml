@@ -89,7 +89,7 @@ jobs:
       - name: Create a Docker registry secret with new image
         run: |
           kubectl -n ${{ vars.K8S_NAMESPACE }} create secret docker-registry ${{ env.DOCKER_PULL_SECRET }} \
-          --docker-server=${{ env.GHCR_REGISTRY }} \
+          --docker-server=ghcr.io \
           --docker-username=${{ github.actor }} \
           --docker-password=${{ secrets.GHCR_TOKEN }}
 
