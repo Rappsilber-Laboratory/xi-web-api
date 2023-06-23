@@ -55,6 +55,11 @@ jobs:
     env:
       DOCKER_PULL_SECRET: pride-gitlab-docker-secret
       DATABASE_INI: application-db-config
+      DB_HOST : ${{ vars.DB_HOST }}
+      DB_DATABASE_NAME : ${{ vars.DB_DATABASE_NAME }}
+      DB_USER : ${{ vars.DB_USER }}
+      DB_PASSWORD : ${{ vars.DB_PASSWORD }}
+      DB_PORT : ${{ vars.DB_PORT }}
 #    if: github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout repository
