@@ -75,7 +75,7 @@ jobs:
           echo ${{ env.K8S_NAMESPACE }}
 
       - name: Use Config
-          kubectl config use-context ${{ env.K8S_NAMESPACE }}
+        run: kubectl config use-context ${{ env.K8S_NAMESPACE }}
 #
 #      - name: Create a Namespace if not exists
 #        run: kubectl create namespace ${{ env.K8S_NAMESPACE }} || true
