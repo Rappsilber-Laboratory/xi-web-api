@@ -79,31 +79,31 @@ jobs:
 
       - name: Create a Namespace if not exists
         run: kubectl create namespace ${{ vars.K8S_NAMESPACE }} || true
-#
-#      - name: Delete the docker pull secrete if exist
-#        run: kubectl -n ${{ env.K8S_NAMESPACE }} delete secret ${{ env.DOCKER_PULL_SECRET }} || true
-#
-#      - name: Create a Docker registry secret with new image
-#        run: |
-#          kubectl -n ${{ env.K8S_NAMESPACE }} create secret docker-registry ${{ env.DOCKER_PULL_SECRET }} \
-#          --docker-server=${{ env.GHCR_REGISTRY }} \
-#          --docker-username=${{ github.actor }}
-#          --docker-password=${{ secrets.GHCR_TOKEN }}
-#
-#      - name: Substitute environment variables
-#        run: < default.database.ini > database.ini
-#
-#      - name: Create ConfigMap
-#        run: kubectl -n ${{ env.K8S_NAMESPACE }} create configmap ${{ env.DATABASE_INI }} --from-file=database.ini || true
-#
-#      - name: Replace configmap if it already exists
-#        run: kubectl -n ${{ env.K8S_NAMESPACE }} create configmap ${{ env.DATABASE_INI }} --from-file=database.ini -o yaml --dry-run=client | kubectl replace -f -
-#
-#      - name: Substitute environment variables
-#        run: envsubst < .kubernetes.yml > kubernetes.yml
-#
-#      - name: Print kubernetes.yml
-#        run: cat kubernetes.yml
+
+      - name: Delete the docker pull secrete if exist
+        run: kubectl -n ${{ vars.K8S_NAMESPACE }} delete secret ${{ env.DOCKER_PULL_SECRET }} || true
+
+      - name: Create a Docker registry secret with new image
+        run: |
+          kubectl -n ${{ vars.K8S_NAMESPACE }} create secret docker-registry ${{ env.DOCKER_PULL_SECRET }} \
+          --docker-server=${{ env.GHCR_REGISTRY }} \
+          --docker-username=${{ github.actor }}
+          --docker-password=${{ secrets.GHCR_TOKEN }}
+
+      - name: Substitute environment variables
+        run: < default.database.ini > database.ini
+
+      - name: Create ConfigMap
+        run: kubectl -n ${{ vars.K8S_NAMESPACE }} create configmap ${{ env.DATABASE_INI }} --from-file=database.ini || true
+
+      - name: Replace configmap if it already exists
+        run: kubectl -n ${{ vars.K8S_NAMESPACE }} create configmap ${{ env.DATABASE_INI }} --from-file=database.ini -o yaml --dry-run=client | kubectl replace -f -
+
+      - name: Substitute environment variables
+        run: envsubst < .kubernetes.yml > kubernetes.yml
+
+      - name: Print kubernetes.yml
+        run: cat kubernetes.yml
 
 #      - name: Deploy to Kubernetes
 #        run: kubectl -n ${{ env.K8S_NAMESPACE }} apply -f kubernetes.yml
