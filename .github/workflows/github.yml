@@ -90,8 +90,17 @@ jobs:
           --docker-username=${{ github.actor }} \
           --docker-password=${{ secrets.GHCR_TOKEN }}
 
-      - name: Substitute environment variables
-        run: < default.database.ini > database.ini
+      - name: Substitute database variables by environment variables or variables
+        run: |
+          sed -e "s|\${DB_HOST}|${{ vars.DB_HOST }}|g" \
+              -e "s|\${DB_DATABASE_NAME}|${{ vars.DB_DATABASE_NAME }}|g" \
+              -e "s|\${DB_USER}|${{ vars.DB_USER }}|g" \
+              -e "s|\${DB_PASSWORD}|${{ vars.DB_PASSWORD }}|g" \
+              -e "s|\${DB_PORT}|${{ vars.DB_PORT }}|g" \
+              default.database.ini > database.ini
+
+      - name: Print database.ini
+        run: cat database.ini
 
       - name: Create ConfigMap
         run: kubectl -n ${{ vars.K8S_NAMESPACE }} create configmap ${{ env.DATABASE_INI }} --from-file=database.ini || true
@@ -99,7 +108,7 @@ jobs:
       - name: Replace configmap if it already exists
         run: kubectl -n ${{ vars.K8S_NAMESPACE }} create configmap ${{ env.DATABASE_INI }} --from-file=database.ini -o yaml --dry-run=client | kubectl replace -f -
 
-      - name: Substitute environment variables
+      - name: Substitute kubernetes variables by environment variables or variables
         run: |
                   sed -e "s|\${PORT}|${{ vars.PORT }}|g" \
                       -e "s|\${node_port}|${{ vars.NODE_PORT }}|g" \
