@@ -74,11 +74,11 @@ jobs:
         run: |
           echo ${{ vars.K8S_NAMESPACE }}
 
-      - name: Use Config
-        run: kubectl config use-context ${{ vars.K8S_NAMESPACE }}
-#
-#      - name: Create a Namespace if not exists
-#        run: kubectl create namespace ${{ env.K8S_NAMESPACE }} || true
+#      - name: Use Config
+#        run: kubectl config use-context ${{ vars.K8S_NAMESPACE }}
+
+      - name: Create a Namespace if not exists
+        run: kubectl create namespace ${{ vars.K8S_NAMESPACE }} || true
 #
 #      - name: Delete the docker pull secrete if exist
 #        run: kubectl -n ${{ env.K8S_NAMESPACE }} delete secret ${{ env.DOCKER_PULL_SECRET }} || true
