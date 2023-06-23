@@ -10,7 +10,7 @@ env:
   IMAGE_NAME: xi2_xiview_loader_image
   GHCR_REGISTRY: ghcr.io
   USERNAME: ${{ github.repository_owner }}
-  K8S_NAMESPACE: ${{ env.K8S_NAMESPACE }}
+#  K8S_NAMESPACE: ${{ env.K8S_NAMESPACE }}
 
 jobs:
 #  docker_build:
@@ -72,10 +72,10 @@ jobs:
 
       - name: Check environment variables
         run: |
-          echo ${{ env.K8S_NAMESPACE }}
+          echo ${{ process.env.K8S_NAMESPACE }}
 
       - name: Use Config
-        run: kubectl config use-context ${{ env.K8S_NAMESPACE }}
+        run: kubectl config use-context ${{ process.env.K8S_NAMESPACE }}
 #
 #      - name: Create a Namespace if not exists
 #        run: kubectl create namespace ${{ env.K8S_NAMESPACE }} || true
