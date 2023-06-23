@@ -10,6 +10,7 @@ env:
   IMAGE_NAME: xi2_xiview_loader_image
   GHCR_REGISTRY: ghcr.io
   USERNAME: ${{ github.repository_owner }}
+  K8S_NAMESPACE: ${{ env.K8S_NAMESPACE }}
 
 jobs:
 #  docker_build:
@@ -54,7 +55,6 @@ jobs:
     env:
       DOCKER_PULL_SECRET: pride-gitlab-docker-secret
       DATABASE_INI: application-db-config
-      K8S_NAMESPACE: ${{ env.K8S_NAMESPACE }}
 #    if: github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout repository
