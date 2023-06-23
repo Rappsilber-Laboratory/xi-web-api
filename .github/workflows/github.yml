@@ -46,9 +46,8 @@ jobs:
 
 
   deploy:
-#    needs: docker_build
+    needs: docker_build
     runs-on: ubuntu-latest
-    environment: 'prod'
     env:
       DOCKER_PULL_SECRET: pride-gitlab-docker-secret
       DB_HOST : ${{ vars.DB_HOST }}
