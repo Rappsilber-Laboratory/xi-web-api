@@ -9,42 +9,40 @@ on:
 env:
   IMAGE_NAME: xi2_xiview_loader_image
   USERNAME: ${{ github.repository_owner }}
-#  K8S_NAMESPACE: ${{ env.K8S_NAMESPACE }}
 
 jobs:
-#  docker_build:
-#    runs-on: ubuntu-latest
-#
-#    steps:
-#    - name: Checkout repository
-#      uses: actions/checkout@v2
-#
-#    - name: create Dockerfile with environment variables
-#      run: |
-#          sed -e "s|\${PORT}|${{ env.PORT }}|g" \
-#              -e "s|\${URL_PREFIX}|${{ env.URL_PREFIX }}|g" \
-#              -e "s|\${APP_ENTRY}|${{ env.APP_ENTRY }}|g" \
-#              .Dockerfile > Dockerfile
-#
-##    - name: Print Dockerfile
-##      run: cat Dockerfile
-#
-#    - name: Set up Docker Buildx
-#      uses: docker/setup-buildx-action@v1
-#
-#    - name: Login to GHCR
-#      uses: docker/login-action@v1
-#      with:
-#        registry: ghcr.io
-#        username: ${{ github.actor }}
-#        password: ${{ secrets.GHCR_TOKEN }}
-#
-#    - name: Build and push Docker image
-#      uses: docker/build-push-action@v2
-#      with:
-#        context: .
-#        push: true
-#        tags: ghcr.io/${{ env.USERNAME }}/${{ env.IMAGE_NAME }}:latest
+  docker_build:
+    env:
+      PORT: ${{ vars.PORT }}
+      URL_PREFIX: ${{ vars.URL_PREFIX }}
+      APP_ENTRY: ${{ vars.APP_ENTRY }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: create Dockerfile with environment variables
+      run: envsubst < .Dockerfile > Dockerfile
+
+    - name: Print Dockerfile
+      run: cat Dockerfile
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Login to GHCR
+      uses: docker/login-action@v1
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GHCR_TOKEN }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        push: true
+        tags: ghcr.io/${{ env.USERNAME }}/${{ env.IMAGE_NAME }}:latest
 
 
   deploy:
@@ -112,4 +110,4 @@ jobs:
         run: cat kubernetes.yml
 
 #      - name: Deploy to Kubernetes
-#        run: kubectl -n ${{ env.K8S_NAMESPACE }} apply -f kubernetes.yml
+#        run: kubectl -n ${{ vars.K8S_NAMESPACE }} apply -f kubernetes.yml
