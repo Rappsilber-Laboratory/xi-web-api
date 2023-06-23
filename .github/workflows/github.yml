@@ -63,7 +63,7 @@ jobs:
       app_name: ${{ vars.APP_NAME }}
       k8s_replicas: ${{ vars.K8S_REPLICAS }}
       K8S_NAMESPACE: ${{ vars.K8S_NAMESPACE }}
-      DATABASE_INI: ${{ env.DATABASE_INI }}
+      DATABASE_INI: ${{ vars.DATABASE_INI }}
       IMAGE: ghcr.io/${{ github.repository_owner }}/xi2_xiview_loader_image:latest
 #    if: github.event_name == 'workflow_dispatch'
     steps:
