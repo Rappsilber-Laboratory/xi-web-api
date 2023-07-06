@@ -258,16 +258,17 @@ def get_matches(cur, uuids, main_score_index):
     sql = """SELECT m.id AS id, m.pep1_id AS pi1, m.pep2_id AS pi2, 
                     CASE WHEN rm.site1 IS NOT NULL THEN rm.site1 ELSE m.site1 END AS s1, 
                     CASE WHEN rm.site2 IS NOT NULL THEN rm.site2 ELSE m.site2 END AS s2, 
-                    rm.scores[%(score_idx)s] AS sc, m.crosslinker_id AS cl,
+                    rm.scores[%(score_idx)s] * 100 AS sc, m.crosslinker_id AS cl,
                     m.search_id AS si, m.calc_mass AS cm, m.assumed_prec_charge AS pc_c, m.assumed_prec_mz AS pc_mz,
                     ms.spectrum_id AS sp, rm.resultset_id AS rs_id,
                     s.precursor_mz AS pc_mz, s.precursor_charge AS pc_c, s.precursor_intensity AS pc_i, 
                     s.scan_number AS sn, s.scan_index AS sc_i,
-                    s.retention_time AS rt, s.run_id AS src, s.peaklist_id AS plf
+                    s.retention_time AS rt, r.name AS run, s.peaklist_id AS plf
                 FROM ResultMatch AS rm
-                    JOIN match AS m ON rm.match_id = m.id
+                    JOIN match AS m ON rm.search_id = m.search_id AND rm.match_id = m.id
                     JOIN matchedspectrum as ms ON rm.match_id = ms.match_id
                     JOIN spectrum as s ON ms.spectrum_id = s.id
+                    JOIN run as r ON s.run_id = r.id
                     WHERE rm.resultset_id IN %(uuids)s
                     AND m.site1 >0 AND m.site2 >0
                     AND rm.top_ranking = TRUE;"""
