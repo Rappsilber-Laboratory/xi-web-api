@@ -43,7 +43,7 @@ jobs:
       with:
         context: .
         push: true
-        tags: ghcr.io/${{ env.USERNAME }}/${{ env.IMAGE_NAME }}:latest
+        tags: ghcr.io/${{ secrets.GHCR_USER }}/${{ env.IMAGE_NAME }}:latest
 
 
   deploy:
