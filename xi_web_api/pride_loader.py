@@ -115,7 +115,7 @@ def create_app():
             # create a cursor
             cur = conn.cursor()
 
-            sql = """SELECT identification_file_name, project_id, identification_file_name_clean FROM upload WHERE project_id = % ORDER BY upload_time DESC LIMIT 1;"""
+            sql = """SELECT identification_file_name, project_id, identification_file_name_clean FROM upload WHERE project_id = %s ORDER BY upload_time DESC LIMIT 1;"""
             print(sql)
             cur.execute(sql, [pxid])
             mzid_rows = cur.fetchall()
