@@ -12,7 +12,7 @@ def sequences(project_id):
     Get all sequences belonging to a project.
 
     :param project_id: identifier of a project,
-    for ProteomeXchange projects this is the PXD****** accession
+        for ProteomeXchange projects this is the PXD****** accession
     :return: JSON object with all dbref id, mzIdentML file it came from and sequences
     """
     conn = None
@@ -43,8 +43,8 @@ def sequences(project_id):
         return jsonify(mzid_rows)
 
 
-@bp.route('/ws/projects/<project_id>/residue-pairs/psm-level', methods=['GET'])
-def get_psm_level_residue_pairs(project_id):
+@bp.route('/ws/projects/<project_id>/residue-pairs/psm-level/<passing_threshold>', methods=['GET'])
+def get_psm_level_residue_pairs(project_id, passing_threshold):
     """
     Get all residue pairs (based on PSM level data) belonging to a project.
 
@@ -52,8 +52,14 @@ def get_psm_level_residue_pairs(project_id):
     positional uncertainty of peptide in protein sequences.
     :param project_id: identifier of a project,
     for ProteomeXchange projects this is the PXD****** accession
+    :param passing_threshold: valid values: passing, all
+        if 'passing' return residue pairs that passed the threshold
+        if 'all' return all residue pairs
     :return:
     """
+    if passing_threshold not in ['passing', 'all']:
+        return f"Invalid value for passing_threshold: {passing_threshold}. " \
+               f"Valid values are: passing, all", 400
     conn = None
     data = {}
     try:
@@ -70,8 +76,11 @@ peptideevidence pe1 ON mp1.id = pe1.peptide_ref AND mp1.upload_id = pe1.upload_i
 modifiedpeptide mp2 ON si.pep2_id = mp2.id AND si.upload_id = mp2.upload_id INNER JOIN
 peptideevidence pe2 ON mp2.id = pe2.peptide_ref AND mp2.upload_id = pe2.upload_id INNER JOIN
 upload u on u.id = si.upload_id
-where u.project_id = %s and mp1.link_site1 > 0 and mp2.link_site1 > 0;"""
+where u.project_id = %s and mp1.link_site1 > 0 and mp2.link_site1 > 0"""
 
+        if passing_threshold.lower() == 'passing':
+            sql += " AND si.pass_threshold = true"
+        sql += ";"
         print(sql)
         cur.execute(sql, [project_id])
         mzid_rows = cur.fetchall()
@@ -96,10 +105,10 @@ def get_reported_residue_pairs(project_id):
     from the ProteinDetectionList element(s).
 
     :param project_id: identifier of a project,
-    for ProteomeXchange projects this is the PXD****** accession
+        for ProteomeXchange projects this is the PXD****** accession
     :return:
     """
-    return "Not Implemented"
+    return "Not Implemented", 501
 
 
 @bp.route('/ws/projects/<project_id>/reported-thresholds', methods=['GET'])
@@ -108,7 +117,7 @@ def get_reported_thresholds(project_id):
     Get all reported thresholds for a project.
 
     :param project_id: identifier of a project,
-    for ProteomeXchange projects this is the PXD****** accession
+        for ProteomeXchange projects this is the PXD****** accession
     :return:
     """
-    return "Not Implemented"
+    return "Not Implemented", 501
