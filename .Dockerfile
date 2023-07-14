@@ -24,7 +24,7 @@ USER appuser
 COPY static ./static
 COPY templates ./templates
 COPY tests ./tests
-COPY xi2_xiview_loader ./xi2_xiview_loader
+COPY xi_web_api ./xi_web_api
 COPY .env .
 COPY default.database.ini .
 COPY .kubernetes.yml .

@@ -17,6 +17,7 @@
         <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
         <script type="text/javascript" src="./xiview.js"></script>
+<!--        <style src="./pride.css"/>-->
 
         <title>network</title>
     </head>
@@ -163,9 +164,9 @@
     <script>
     //<![CDATA[
     //     window.xiSpecBaseDir = "/spectrum/"; // you may need to edit this depending on where xiView_container is in web server folder
-    window.xiAnnotRoot = "http://xi.bioanalytik.tu-berlin.de:8084/xiAnnotator/";
+    window.xiAnnotRoot = "xiAnnotator/";
     window.peakListUrl = "get_peaklist";
-    xiview.main("get_data");
+    xiview.main("PRIDE", "get_data");
 
     //]]>
     </script>
