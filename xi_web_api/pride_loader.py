@@ -139,9 +139,9 @@ def create_app():
         dataset = get_dataset(pxid)
         datafile = {}
         record = dataset[0] #  todo - return an array, not a single record - not changing now coz might break pride end
-        datafile["filename"] = record[1]
+        datafile["filename"] = record[2]
         datafile["visualisation"] = "cross-linking"
-        datafile["link"] = request.base_url[:request.base_url.rfind('/')] + "/network.html?project=" + record[0] + "&file=" + record[2]
+        datafile["link"] = request.base_url[:request.base_url.rfind('/')] + "/network.html?project=" + record[1] + "&file=" + record[2]
         return json.dumps(datafile)
 
     @app.route('/get_data', methods=['GET'])
