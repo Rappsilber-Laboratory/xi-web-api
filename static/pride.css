@@ -62,3 +62,10 @@
     display: none !important;
 }
 
+#expDropdownPlaceholder > div > ul > li.sectionEnd {
+    display: none !important;
+}
+
+#expDropdownPlaceholder > div > ul > li:nth-child(8) {
+    display: none !important;
+}
