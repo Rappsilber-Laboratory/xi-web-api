@@ -138,6 +138,8 @@ def create_app():
         pxid = request.args.get('pxid')
         dataset = get_dataset(pxid)
         datafile = {}
+        if len(dataset) == 0:
+            return json.dumps({})
         record = dataset[0] #  todo - return an array, not a single record - not changing now coz might break pride end
         datafile["filename"] = record[2]
         datafile["visualisation"] = "cross-linking"
