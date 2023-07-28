@@ -45,7 +45,6 @@ jobs:
         push: true
         tags: ghcr.io/${{ secrets.GHCR_USER }}/${{ env.IMAGE_NAME }}:latest
 
-
   deploy:
     needs: docker_build
     environment: prod
@@ -64,6 +63,7 @@ jobs:
       K8S_NAMESPACE: ${{ vars.K8S_NAMESPACE }}
       DATABASE_INI: ${{ vars.DATABASE_INI }}
       IMAGE: ghcr.io/${{ secrets.GHCR_USER }}/xi2_xiview_loader_image:latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
