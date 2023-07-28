@@ -28,6 +28,7 @@ COPY xi_web_api ./xi_web_api
 COPY .env .
 COPY default.database.ini .
 COPY .kubernetes.yml .
+COPY *.whl .
 
 #FROM base AS production
 # Run the application
