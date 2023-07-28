@@ -7,8 +7,9 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE_NAME: xi2_xiview_loader_image
+  IMAGE_NAME: ${{ vars.IMAGE_NAME }}
   USERNAME: ${{ github.repository_owner }}
+  IMAGE_TAG: ${{ github.sha }}
 
 jobs:
   docker_build:
@@ -43,7 +44,9 @@ jobs:
       with:
         context: .
         push: true
-        tags: ghcr.io/${{ secrets.GHCR_USER }}/${{ env.IMAGE_NAME }}:latest
+        tags: |
+          ghcr.io/${{ secrets.GHCR_USER }}/${{ env.IMAGE_NAME }}:latest
+          ghcr.io/${{ secrets.GHCR_USER }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
   deploy:
     needs: docker_build
@@ -62,7 +65,7 @@ jobs:
       k8s_replicas: ${{ vars.K8S_REPLICAS }}
       K8S_NAMESPACE: ${{ vars.K8S_NAMESPACE }}
       DATABASE_INI: ${{ vars.DATABASE_INI }}
-      IMAGE: ghcr.io/${{ secrets.GHCR_USER }}/xi2_xiview_loader_image:latest
+      IMAGE: ghcr.io/${{ secrets.GHCR_USER }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
     steps:
       - name: Checkout repository
