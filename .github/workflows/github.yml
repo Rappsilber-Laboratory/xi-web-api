@@ -65,7 +65,7 @@ jobs:
       k8s_replicas: ${{ vars.K8S_REPLICAS }}
       K8S_NAMESPACE: ${{ vars.K8S_NAMESPACE }}
       DATABASE_INI: ${{ vars.DATABASE_INI }}
-      IMAGE: ghcr.io/${{ secrets.GHCR_USER }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+      IMAGE: ghcr.io/${{ secrets.GHCR_USER }}/$IMAGE_NAME:${{ env.IMAGE_TAG }}
 
     steps:
       - name: Checkout repository
