@@ -1,0 +1,71 @@
+.fa-xi {
+    display: none !important;
+}
+
+#loadDropdownPlaceholder {
+    display: none !important;
+}
+
+#proteinSelectionDropdownPlaceholder {
+    display: none !important;
+}
+
+#groupsDropdownPlaceholder {
+    display: none !important;
+}
+
+#annotationsDropdownPlaceholder {
+    display: none !important;
+}
+
+#nglChkBxPlaceholder {
+    display: none !important;
+}
+
+#matrixChkBxPlaceholder {
+    display: none !important;
+}
+
+#distoChkBxPlaceholder {
+    display: none !important;
+}
+
+#scatterplotChkBxPlaceholder {
+    display: none !important;
+}
+
+#alignChkBxPlaceholder {
+    display: none !important;
+}
+
+#goTermsChkBxPlaceholder {
+    display: none !important;
+}
+
+#validationStatus {
+    display: none !important;
+}
+
+#targetDecoy {
+    display: none !important;
+}
+
+#loadLayoutButton {
+    display: none !important;
+}
+
+.savedLayoutName {
+    display: none !important;
+}
+
+.saveLayoutButton {
+    display: none !important;
+}
+
+#expDropdownPlaceholder > div > ul > li.sectionEnd {
+    display: none !important;
+}
+
+#expDropdownPlaceholder > div > ul > li:nth-child(8) {
+    display: none !important;
+}

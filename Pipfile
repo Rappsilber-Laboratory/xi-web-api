@@ -5,7 +5,7 @@ name = "pypi"
 
 [packages]
 setuptools = "57.5.0"
-flask = "*"
+flask = "==2.2.3"
 flask_cors = "*"
 #psycopg2 = "*"
 psycopg2-binary = "2.9.5"

@@ -35,7 +35,7 @@ jobs:
       uses: docker/login-action@v1
       with:
         registry: ghcr.io
-        username: ${{ github.actor }}
+        username: ${{ secrets.GHCR_USER }}
         password: ${{ secrets.GHCR_TOKEN }}
 
     - name: Build and push Docker image
@@ -43,8 +43,7 @@ jobs:
       with:
         context: .
         push: true
-        tags: ghcr.io/${{ env.USERNAME }}/${{ env.IMAGE_NAME }}:latest
-
+        tags: ghcr.io/${{ secrets.GHCR_USER }}/${{ env.IMAGE_NAME }}:latest
 
   deploy:
     needs: docker_build
@@ -63,7 +62,8 @@ jobs:
       k8s_replicas: ${{ vars.K8S_REPLICAS }}
       K8S_NAMESPACE: ${{ vars.K8S_NAMESPACE }}
       DATABASE_INI: ${{ vars.DATABASE_INI }}
-      IMAGE: ghcr.io/${{ github.repository_owner }}/xi2_xiview_loader_image:latest
+      IMAGE: ghcr.io/${{ secrets.GHCR_USER }}/xi2_xiview_loader_image:latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -88,7 +88,7 @@ jobs:
         run: |
           kubectl -n ${{ vars.K8S_NAMESPACE }} create secret docker-registry ${{ env.DOCKER_PULL_SECRET }} \
           --docker-server=ghcr.io \
-          --docker-username=${{ github.actor }} \
+          --docker-username=${{ secrets.GHCR_USER }} \
           --docker-password=${{ secrets.GHCR_TOKEN }}
 
       - name: Substitute database variables by environment variables or variables
