@@ -46,8 +46,7 @@ jobs:
         push: true
         tags: |
           ghcr.io/${{ env.USERNAME }}/${{ env.IMAGE_NAME }}:latest
-#          ghcr.io/${{ secrets.GHCR_USER }}/${{ env.IMAGE_NAME }}:latest
-#          ghcr.io/${{ secrets.GHCR_USER }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          ghcr.io/${{ env.USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
   deploy:
     needs: docker_build
@@ -66,7 +65,7 @@ jobs:
       k8s_replicas: ${{ vars.K8S_REPLICAS }}
       K8S_NAMESPACE: ${{ vars.K8S_NAMESPACE }}
       DATABASE_INI: ${{ vars.DATABASE_INI }}
-      IMAGE: ghcr.io/${{ secrets.GHCR_USER }}/$IMAGE_NAME:$IMAGE_TAG
+      IMAGE: ghcr.io/${{ env.USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
     steps:
       - name: Checkout repository
@@ -92,7 +91,7 @@ jobs:
         run: |
           kubectl -n ${{ vars.K8S_NAMESPACE }} create secret docker-registry ${{ env.DOCKER_PULL_SECRET }} \
           --docker-server=ghcr.io \
-          --docker-username=${{ secrets.GHCR_USER }} \
+          --docker-username=${{ env.USERNAME }} \
           --docker-password=${{ secrets.GHCR_TOKEN }}
 
       - name: Substitute database variables by environment variables or variables
