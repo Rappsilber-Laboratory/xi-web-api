@@ -114,3 +114,6 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: kubectl -n ${{ vars.K8S_NAMESPACE }} apply -f kubernetes.yml
+
+      - name: restart Pod in case if not pulling latest image
+        run: kubectl rollout restart deploy ${{ vars.APP_NAME }} -n ${{ vars.K8S_NAMESPACE }}
