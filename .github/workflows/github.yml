@@ -45,8 +45,8 @@ jobs:
         context: .
         push: true
         tags: |
-          ghcr.io/${{ secrets.GHCR_USER }}/$IMAGE_NAME:latest
-          ghcr.io/${{ secrets.GHCR_USER }}/$IMAGE_NAME:$IMAGE_TAG
+          ghcr.io/${{ secrets.GHCR_USER }}/${{ env.IMAGE_NAME }}:latest
+          ghcr.io/${{ secrets.GHCR_USER }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
   deploy:
     needs: docker_build
