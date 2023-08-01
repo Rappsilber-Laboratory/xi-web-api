@@ -8,7 +8,7 @@ on:
 
 env:
   IMAGE_NAME: ${{ vars.IMAGE_NAME }}
-  USERNAME: ${{ github.repository_owner }}
+  USERNAME: ${{ github.actor }}
   IMAGE_TAG: ${{ github.sha }}
 
 jobs:
@@ -36,7 +36,7 @@ jobs:
       uses: docker/login-action@v1
       with:
         registry: ghcr.io
-        username: ${{ secrets.GHCR_USER }}
+        username: ${{ env.USERNAME }}
         password: ${{ secrets.GHCR_TOKEN }}
 
     - name: Build and push Docker image
@@ -45,8 +45,8 @@ jobs:
         context: .
         push: true
         tags: |
-          ghcr.io/${{ secrets.GHCR_USER }}/${{ env.IMAGE_NAME }}:latest
-          ghcr.io/${{ secrets.GHCR_USER }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          ghcr.io/${{ env.USERNAME }}/${{ env.IMAGE_NAME }}:latest
+          ghcr.io/${{ env.USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
   deploy:
     needs: docker_build
@@ -65,7 +65,7 @@ jobs:
       k8s_replicas: ${{ vars.K8S_REPLICAS }}
       K8S_NAMESPACE: ${{ vars.K8S_NAMESPACE }}
       DATABASE_INI: ${{ vars.DATABASE_INI }}
-      IMAGE: ghcr.io/${{ secrets.GHCR_USER }}/$IMAGE_NAME:${{ env.IMAGE_TAG }}
+      IMAGE: ghcr.io/${{ github.actor }}/${{ vars.IMAGE_NAME }}:latest
 
     steps:
       - name: Checkout repository
@@ -91,7 +91,7 @@ jobs:
         run: |
           kubectl -n ${{ vars.K8S_NAMESPACE }} create secret docker-registry ${{ env.DOCKER_PULL_SECRET }} \
           --docker-server=ghcr.io \
-          --docker-username=${{ secrets.GHCR_USER }} \
+          --docker-username=${{ env.USERNAME }} \
           --docker-password=${{ secrets.GHCR_TOKEN }}
 
       - name: Substitute database variables by environment variables or variables
@@ -114,3 +114,6 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: kubectl -n ${{ vars.K8S_NAMESPACE }} apply -f kubernetes.yml
+
+      - name: restart Pod in case if not pulling latest image
+        run: kubectl rollout restart deploy ${{ vars.APP_NAME }} -n ${{ vars.K8S_NAMESPACE }}

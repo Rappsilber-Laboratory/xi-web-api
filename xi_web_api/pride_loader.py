@@ -61,8 +61,8 @@ def create_app():
     from xi_web_api.pdbdev import bp as pdb_dev_bp
     app.register_blueprint(pdb_dev_bp)
 
-    from xi2annotator import bp as xi2_bp
-    app.register_blueprint(xi2_bp)
+    # from xi2annotator import bp as xi2_bp
+    # app.register_blueprint(xi2_bp)
 
 
     @app.route('/', methods=['GET'])
