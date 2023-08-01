@@ -45,8 +45,8 @@ jobs:
         context: .
         push: true
         tags: |
-          ghcr.io/${{ env.USERNAME }}/${{ env.IMAGE_NAME }}:latest
-          ghcr.io/${{ env.USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          ghcr.io/${{ env.GITHUB_REPOSITORY }}:latest
+          ghcr.io/${{ env.GITHUB_REPOSITORY }}:${{ env.IMAGE_TAG }}
 
   deploy:
     needs: docker_build
@@ -65,7 +65,7 @@ jobs:
       k8s_replicas: ${{ vars.K8S_REPLICAS }}
       K8S_NAMESPACE: ${{ vars.K8S_NAMESPACE }}
       DATABASE_INI: ${{ vars.DATABASE_INI }}
-      IMAGE: ghcr.io/${{ github.actor }}/${{ vars.IMAGE_NAME }}:latest
+      IMAGE: ghcr.io/${{ vars.GITHUB_REPOSITORY }}:latest
 
     steps:
       - name: Checkout repository
