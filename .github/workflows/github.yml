@@ -8,7 +8,7 @@ on:
 
 env:
   IMAGE_NAME: ${{ vars.IMAGE_NAME }}
-#  USERNAME: ${{ github.actor }}
+  USERNAME: ${{ secrets.GHCR_USER }}
   IMAGE_TAG: ${{ github.sha }}
 
 jobs:
