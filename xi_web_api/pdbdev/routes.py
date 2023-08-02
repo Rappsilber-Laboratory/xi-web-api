@@ -22,10 +22,13 @@ def sequences(project_id):
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
 
-        sql = """SELECT s.id, u.identification_file_name, s.sequence
+        sql = """SELECT dbseq.id, u.identification_file_name, dbseq.sequence
                     FROM upload AS u
-                    JOIN dbsequence AS s ON u.id = s.upload_id
-                 WHERE u.project_id = %s;"""
+                    JOIN dbsequence AS dbseq ON u.id = dbseq.upload_id
+                    INNER JOIN peptideevidence pe on dbseq.id = pe.dbsequence_ref AND dbseq.upload_id = pe.upload_id
+                 WHERE u.project_id = %s
+                 AND pe.is_decoy = false
+                 GROUP by dbseq.id, dbseq.sequence, u.identification_file_name;"""
 
         print(sql)
         cur.execute(sql, [project_id])
@@ -40,7 +43,7 @@ def sequences(project_id):
         if conn is not None:
             conn.close()
             print('Database connection closed.')
-        return jsonify(mzid_rows)
+        return jsonify({"data": mzid_rows})
 
 
 @bp.route('/ws/projects/<project_id>/residue-pairs/psm-level/<passing_threshold>', methods=['GET'])
@@ -76,7 +79,7 @@ peptideevidence pe1 ON mp1.id = pe1.peptide_ref AND mp1.upload_id = pe1.upload_i
 modifiedpeptide mp2 ON si.pep2_id = mp2.id AND si.upload_id = mp2.upload_id INNER JOIN
 peptideevidence pe2 ON mp2.id = pe2.peptide_ref AND mp2.upload_id = pe2.upload_id INNER JOIN
 upload u on u.id = si.upload_id
-where u.project_id = %s and mp1.link_site1 > 0 and mp2.link_site1 > 0 AND pe1.is_decoy = false AND pe2.is_decoy = false
+where u.project_id = %s and mp1.link_site1 > 0 and mp2.link_site1 > 0 AND pe1.is_decoy = false AND pe2.is_decoy = false;
 """
 
         if passing_threshold.lower() == 'passing':
