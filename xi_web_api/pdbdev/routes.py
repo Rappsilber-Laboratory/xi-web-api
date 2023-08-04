@@ -25,7 +25,7 @@ def sequences(project_id):
         sql = """SELECT dbseq.id, u.identification_file_name, dbseq.sequence
                     FROM upload AS u
                     JOIN dbsequence AS dbseq ON u.id = dbseq.upload_id
-                    INNER JOIN peptideevidence pe on dbseq.id = pe.dbsequence_ref AND dbseq.upload_id = pe.upload_id
+                    INNER JOIN peptideevidence pe ON dbseq.id = pe.dbsequence_ref AND dbseq.upload_id = pe.upload_id
                  WHERE u.project_id = %s
                  AND pe.is_decoy = false
                  GROUP by dbseq.id, dbseq.sequence, u.identification_file_name;"""
