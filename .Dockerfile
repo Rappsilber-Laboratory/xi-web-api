@@ -11,6 +11,8 @@ ENV FLASK_ENV production
 RUN python3 -m pip install wheel pip --upgrade && pip install pipenv
 RUN apt-get update && apt-get install
 
+COPY *.whl .
+
 COPY Pipfile .
 COPY Pipfile.lock .
 RUN PIPENV_VENV_IN_PROJECT=1 pipenv install --system
@@ -28,7 +30,6 @@ COPY xi_web_api ./xi_web_api
 COPY .env .
 COPY default.database.ini .
 COPY .kubernetes.yml .
-#COPY *.whl .
 
 #FROM base AS production
 # Run the application
