@@ -8,6 +8,7 @@ ENV PYTHONFAULTHANDLER 1
 ENV FLASK_ENV production
 
 # Install pipenv and compilation dependencies
+RUN apt-get update && apt-get install -y gcc
 RUN python3 -m pip install wheel pip --upgrade && pip install pipenv
 RUN apt-get update && apt-get install
 
