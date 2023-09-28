@@ -11,7 +11,7 @@ flask_cors = "*"
 psycopg2-binary = "2.9.5"
 python-dotenv = "*"
 waitress = "*"
-xisearch2 = {path = "xisearch2-2.0.1-py3-none-any.whl"}
+xisearch2 = {path = "../xisearch2-2.0.1-py3-none-any.whl"}
 
 [dev-packages]
 pytest-cov = "*"
