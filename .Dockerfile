@@ -18,7 +18,7 @@ COPY Pipfile .
 COPY Pipfile.lock .
 RUN PIPENV_VENV_IN_PROJECT=1 pipenv install --system
 
-echo 'from xisearch2.cython import *; ' | python
+RUN echo 'from xisearch2.cython import *; ' | python
 
 # Create and switch to a new user to ensure security
 RUN useradd --create-home appuser
