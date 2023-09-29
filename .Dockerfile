@@ -10,7 +10,7 @@ ENV FLASK_ENV production
 COPY *.whl .
 
 # Install pipenv and compilation dependencies
-RUN apt-get update && apt-get install -y gcc
+RUN apt-get update && apt-get install -y gcc g++
 RUN python3 -m pip install wheel pip --upgrade && pip install pipenv
 RUN apt-get update && apt-get install
 
