@@ -82,7 +82,7 @@ def create_app():
             # create a cursor
             cur = conn.cursor()
 
-            sql = """SELECT project_id FROM upload GROUP BY project_id;"""
+            sql = """SELECT project_id, identification_file_name FROM upload;"""
             print(sql)
             cur.execute(sql)
             ds_rows = cur.fetchall()
