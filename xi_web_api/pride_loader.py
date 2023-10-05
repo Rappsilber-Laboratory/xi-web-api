@@ -7,7 +7,10 @@ import json
 import re
 from configparser import ConfigParser
 import os
+import logging.config
 
+logging.config.fileConfig(os.path.dirname(__file__) + '/../logging.ini')
+logger = logging.getLogger(__name__)
 
 def get_db_connection():
     config = os.environ.get('DB_CONFIG', 'database.ini')
@@ -83,10 +86,10 @@ def create_app():
             cur = conn.cursor()
 
             sql = """SELECT project_id, identification_file_name FROM upload;"""
-            print(sql)
+            logger.debug(sql)
             cur.execute(sql)
             ds_rows = cur.fetchall()
-            print("finished")
+            logger.info("finished")
             # close the communication with the PostgreSQL
             cur.close()
         except (Exception, psycopg2.DatabaseError) as e:
@@ -95,7 +98,7 @@ def create_app():
         finally:
             if conn is not None:
                 conn.close()
-                print('Database connection closed.')
+                logger.debug('Database connection closed.')
             if error is not None:
                 raise error
             return ds_rows
@@ -113,21 +116,21 @@ def create_app():
         error = None
         try:
             # connect to the PostgreSQL server
-            print('Connecting to the PostgreSQL database...')
+            logger.info('Connecting to the PostgreSQL database...')
             conn = get_db_connection()
 
             # create a cursor
             cur = conn.cursor()
 
             sql = """SELECT identification_file_name, project_id, identification_file_name_clean FROM upload WHERE project_id = %s ORDER BY upload_time DESC LIMIT 1;"""
-            print(sql)
+            logger.debug(sql)
             cur.execute(sql, [pxid])
             mzid_rows = cur.fetchall()
-            print("finished")
+            logger.debug("finished")
             # close the communication with the PostgreSQL
             cur.close()
         except (Exception, psycopg2.DatabaseError) as e:
-            print(e)
+            logger.error(e)
             error = e
         finally:
             if conn is not None:
@@ -177,29 +180,29 @@ def create_app():
         error = None
         try:
             # connect to the PostgreSQL server
-            print('Connecting to the PostgreSQL database...')
+            logger.info('Connecting to the PostgreSQL database...')
             conn = get_db_connection()
 
             # create a cursor
             cur = conn.cursor()
 
             sql = """SELECT id FROM upload WHERE project_id = %s AND identification_file_name_clean = %s ORDER BY upload_time DESC LIMIT 1;"""
-            print(sql)
+            logger.debug(sql)
             cur.execute(sql, [pxid, filename_clean])
             mzid_id = cur.fetchone()
             if mzid_id is None:
                 return jsonify({"error": "No data found"}), 404
-            print("finished")
+            logger.info("finished")
             # close the communication with the PostgreSQL
             cur.close()
             uuid = mzid_id[0]
         except (Exception, psycopg2.DatabaseError) as e:
-            print(e)
+            logger.error(e)
             error = e
         finally:
             if conn is not None:
                 conn.close()
-                print('Database connection closed.')
+                logger.debug('Database connection closed.')
             if error is not None:
                 raise error
 
@@ -315,7 +318,7 @@ def create_app():
             data["proteins"] = get_proteins(cur, protein_clause)
             # data["xiNETLayout"] = get_layout(cur, uuid)
 
-            print("finished")
+            logger.info("finished")
             # close the communication with the PostgreSQL
             cur.close()
         except (Exception, psycopg2.DatabaseError) as e:
@@ -323,7 +326,7 @@ def create_app():
         finally:
             if conn is not None:
                 conn.close()
-                print('Database connection closed.')
+                logger.debug('Database connection closed.')
             if error is not None:
                 raise error
             return data
@@ -350,12 +353,12 @@ def create_app():
             # close the communication with the PostgreSQL
             cur.close()
         except (Exception, psycopg2.DatabaseError) as e:
-            print(error)
+            logger.error(error)
             error = e
         finally:
             if conn is not None:
                 conn.close()
-                print('Database connection closed.')
+                logger.debug('Database connection closed.')
             if error is not None:
                 raise error
             return data
@@ -565,7 +568,7 @@ def get_proteins(cur, protein_clause):
     if protein_clause != "()":
         sql = """SELECT id, name, accession, sequence, upload_id, description
                     FROM dbsequence WHERE """ + protein_clause + """;"""
-        print(sql)
+        logger.debug(sql)
         cur.execute(sql)
         protein_rows = cur.fetchall()
         proteins = []

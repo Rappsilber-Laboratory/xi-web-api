@@ -29,6 +29,9 @@ spec:
             items:
               - key: database.ini
                 path: database.ini
+        - name: log-volume
+          persistentVolumeClaim:
+            claimName: parser-pvc
       containers:
         - name: $app_name
           image: $IMAGE
@@ -40,6 +43,8 @@ spec:
               mountPath: /home/appuser/database.ini
               subPath: database.ini
               readOnly: true
+            - name: log-volume
+              mountPath: /home/appuser/logs/$app_name
 
 ---
 apiVersion: v1
