@@ -7,17 +7,6 @@ object-assign
 /* @license C3.js v0.4.23 | (c) C3 Team and other contributors | http://c3js.org/ */
 
 /*!
- * Sizzle CSS Selector Engine v2.3.4
- * https://sizzlejs.com/
- *
- * Copyright JS Foundation and other contributors
- * Released under the MIT license
- * https://js.foundation/
- *
- * Date: 2019-04-08
- */
-
-/*!
  * Sizzle CSS Selector Engine v2.3.6
  * https://sizzlejs.com/
  *
@@ -44,20 +33,6 @@ object-assign
  * http://jquery.org/license
  *
  * Date: Sun May 10 09:02:36 2020 +0200
- */
-
-/*!
- * jQuery JavaScript Library v3.4.1
- * https://jquery.com/
- *
- * Includes Sizzle.js
- * https://sizzlejs.com/
- *
- * Copyright JS Foundation and other contributors
- * Released under the MIT license
- * https://jquery.org/license
- *
- * Date: 2019-05-01T21:04Z
  */
 
 /*!
@@ -514,7 +489,7 @@ object-assign
   PERFORMANCE OF THIS SOFTWARE.
   ***************************************************************************** */
 
-/*! DataTables 1.11.5
+/*! DataTables 1.11.3
  * ©2008-2021 SpryMedia Ltd - datatables.net/license
  */
 

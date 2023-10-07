@@ -176,8 +176,9 @@ def create_app(config='database.ini'):
             cur = conn.cursor(cursor_factory=RealDictCursor)
 
             data["sid"] = uuid_param
-            mainscore, data["searches"] = get_resultset_search_metadata(cur, uuids, uuid_dict)
-            data["matches"], peptide_clause = get_matches(cur, uuids, mainscore)
+            data["searches"] = get_resultset_search_metadata(cur, uuids, uuid_dict)
+            data["primary_score"] = get_primary_score(cur, uuids[0])
+            data["matches"], peptide_clause = get_matches(cur, uuids, data["primary_score"]['score_index'])
             data["peptides"], protein_clause = get_peptides(cur, peptide_clause)
             data["proteins"] = get_proteins(cur, protein_clause)
             data["xiNETLayout"] = get_layout(cur, uuid_param)
@@ -222,6 +223,12 @@ def create_app(config='database.ini'):
 
     return app
 
+def get_primary_score(cur, uuid):
+    sql = """SELECT sn.name AS score_name, sn.score_id AS score_index, sn.higher_is_better AS higher_better
+                    FROM scorename AS sn
+                    WHERE sn.resultset_id = %s AND sn.primary_score = TRUE"""
+    cur.execute(sql, [uuid])
+    return cur.fetchone()
 
 def get_resultset_search_metadata(cur, uuids, uuid_dict):
     sql = """
@@ -241,7 +248,7 @@ def get_resultset_search_metadata(cur, uuids, uuid_dict):
     after = time()
     print(after - before)
     resultset_meta_cur = cur.fetchall()
-    mainscore = 0  # resultset_meta_cur[0].main_score #  taking first resultsets mainscore as overall main score
+    # mainscore = resultset_meta_cur[0]['rs_main_score'] #  taking first resultsets mainscore as overall main score
     resultsets = {}
     for rs_row in resultset_meta_cur:
         resultset_id = str(rs_row['id'])
@@ -250,7 +257,7 @@ def get_resultset_search_metadata(cur, uuids, uuid_dict):
             rs_row['group'] = group
         rs_row['s_config'] = json.loads(rs_row['s_config'])
         resultsets[resultset_id] = rs_row
-    return mainscore, resultsets
+    return resultsets
 
 
 def get_matches(cur, uuids, main_score_index):
@@ -258,7 +265,7 @@ def get_matches(cur, uuids, main_score_index):
     sql = """SELECT m.id AS id, m.pep1_id AS pi1, m.pep2_id AS pi2, 
                     CASE WHEN rm.site1 IS NOT NULL THEN rm.site1 ELSE m.site1 END AS s1, 
                     CASE WHEN rm.site2 IS NOT NULL THEN rm.site2 ELSE m.site2 END AS s2, 
-                    rm.scores[%(score_idx)s] * 100 AS sc, m.crosslinker_id AS cl,
+                    rm.scores[%(score_idx)s + array_lower(rm.scores, 1) ] * 100 AS sc, m.crosslinker_id AS cl,
                     m.search_id AS si, m.calc_mass AS cm, m.assumed_prec_charge AS pc_c, m.assumed_prec_mz AS pc_mz,
                     ms.spectrum_id AS sp, rm.resultset_id AS rs_id,
                     s.precursor_mz AS pc_mz, s.precursor_charge AS pc_c, s.precursor_intensity AS pc_i, 
