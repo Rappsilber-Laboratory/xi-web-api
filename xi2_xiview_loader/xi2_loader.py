@@ -282,7 +282,7 @@ def get_matches(cur, uuids, main_score_index):
     print('Matches query:')
     print(' '.join(sql.split()))
     before = time()
-    cur.execute(sql, {'uuids': tuple(uuids), 'score_idx': main_score_index+1})
+    cur.execute(sql, {'uuids': tuple(uuids), 'score_idx': main_score_index})
     after = time()
     print(after - before)
     matches = []
