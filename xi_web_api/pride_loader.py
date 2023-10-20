@@ -9,7 +9,8 @@ from configparser import ConfigParser
 import os
 import logging.config
 
-logging.config.fileConfig(os.path.dirname(__file__) + '/../logging.ini')
+
+logging.config.fileConfig('logging.ini')
 logger = logging.getLogger(__name__)
 
 def get_db_connection():
