@@ -24,6 +24,7 @@ RUN echo 'from xisearch2.cython import *; ' | python
 RUN useradd --create-home appuser
 WORKDIR /home/appuser
 USER appuser
+RUN mkdir -p /home/appuser/logs
 
 # Install application into container
 COPY static ./static
