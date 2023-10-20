@@ -32,7 +32,7 @@ COPY tests ./tests
 COPY xi_web_api ./xi_web_api
 COPY .env .
 COPY default.database.ini .
-COPY default.logging.ini .
+COPY logging.ini .
 COPY .kubernetes.yml .
 
 #FROM base AS production
