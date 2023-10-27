@@ -5,7 +5,7 @@ class Config(object):
 
 
 class ProductionConfig(Config):
-    ...
+    DEBUG = True
 
 
 class DevelopmentConfig(Config):
