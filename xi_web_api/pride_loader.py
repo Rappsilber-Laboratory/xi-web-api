@@ -9,9 +9,9 @@ from configparser import ConfigParser
 import os
 import logging.config
 
-
 logging.config.fileConfig('logging.ini')
 logger = logging.getLogger(__name__)
+
 
 def get_db_connection():
     config = os.environ.get('DB_CONFIG', 'database.ini')
@@ -33,6 +33,7 @@ def get_db_connection():
             raise Exception('Section {0} not found in the {1} file'.format(section, filename))
 
         return db
+
     # read connection information
     db_info = parse_database_info(config)
     print('Connecting to the PostgreSQL database...')
@@ -67,7 +68,6 @@ def create_app():
 
     from xi2annotator import bp as xi2_bp
     app.register_blueprint(xi2_bp)
-
 
     @app.route('/', methods=['GET'])
     def index():
@@ -148,10 +148,11 @@ def create_app():
         datafile = {}
         if len(dataset) == 0:
             return json.dumps({})
-        record = dataset[0] #  todo - return an array, not a single record - not changing now coz might break pride end
+        record = dataset[0]  # todo - return an array, not a single record - not changing now coz might break pride end
         datafile["filename"] = record[2]
         datafile["visualisation"] = "cross-linking"
-        datafile["link"] = request.base_url[:request.base_url.rfind('/')] + "/network.html?project=" + record[1] + "&file=" + record[2]
+        datafile["link"] = request.base_url[:request.base_url.rfind('/')] + "/network.html?project=" + record[
+            1] + "&file=" + record[2]
         return json.dumps(datafile)
 
     @app.route('/get_data', methods=['GET'])
