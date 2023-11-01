@@ -262,14 +262,16 @@ def get_resultset_search_metadata(cur, uuids, uuid_dict):
 
 def get_matches(cur, uuids, main_score_index):
     # small heuristic to see if the score is between 0 and 1
-    sqlScore = """SELECT MAX(score) FROM (
-                        SELECT scores[121 + array_lower(scores,1)] as score from resultmatch 
-                        WHERE resultset_id in %(uuids)s limit 1000) s;"""
-    cur.execute(sql, {'uuids': tuple(uuids)})
+    sqlScore = """WITH score_idx AS (SELECT %(score_idx)s id)
+SELECT max(score) FROM (
+                        SELECT scores[score_idx.id + array_lower(scores,1)] as score from resultmatch, score_idx
+                        WHERE resultset_id in (%(uuids)s)
+                        AND scores[score_idx.id + array_lower(scores,1)] != 'NaN' limit 1000) s;"""
+    cur.execute(sqlScore, {'uuids': tuple(uuids), 'score_idx': main_score_index})
     max_score = cur.fetchone()
-    if max_score <1:
+    if max_score['max'] < 1:
         score_factor = 100
-    else
+    else:
         score_factor = 1
 
     # todo - the join to matchedspectrum for cleavable crosslinker - needs a GROUP BY match_id?'
