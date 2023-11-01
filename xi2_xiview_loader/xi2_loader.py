@@ -261,11 +261,22 @@ def get_resultset_search_metadata(cur, uuids, uuid_dict):
 
 
 def get_matches(cur, uuids, main_score_index):
+    # small heuristic to see if the score is between 0 and 1
+    sqlScore = """SELECT MAX(score) FROM (
+                        SELECT scores[121 + array_lower(scores,1)] as score from resultmatch 
+                        WHERE resultset_id in %(uuids)s limit 1000) s;"""
+    cur.execute(sql, {'uuids': tuple(uuids)})
+    max_score = cur.fetchone()
+    if max_score <1:
+        score_factor = 100
+    else
+        score_factor = 1
+
     # todo - the join to matchedspectrum for cleavable crosslinker - needs a GROUP BY match_id?'
     sql = """SELECT m.id AS id, m.pep1_id AS pi1, m.pep2_id AS pi2, 
                     CASE WHEN rm.site1 IS NOT NULL THEN rm.site1 ELSE m.site1 END AS s1, 
                     CASE WHEN rm.site2 IS NOT NULL THEN rm.site2 ELSE m.site2 END AS s2, 
-                    rm.scores[%(score_idx)s + array_lower(rm.scores, 1) ] * 100 AS sc, m.crosslinker_id AS cl,
+                    rm.scores[%(score_idx)s + array_lower(rm.scores, 1) ] * %(score_factor)s  AS sc, m.crosslinker_id AS cl,
                     m.search_id AS si, m.calc_mass AS cm, m.assumed_prec_charge AS pc_c, m.assumed_prec_mz AS pc_mz,
                     ms.spectrum_id AS sp, rm.resultset_id AS rs_id,
                     s.precursor_mz AS pc_mz, s.precursor_charge AS pc_c, s.precursor_intensity AS pc_i, 
@@ -282,7 +293,7 @@ def get_matches(cur, uuids, main_score_index):
     print('Matches query:')
     print(' '.join(sql.split()))
     before = time()
-    cur.execute(sql, {'uuids': tuple(uuids), 'score_idx': main_score_index})
+    cur.execute(sql, {'uuids': tuple(uuids), 'score_idx': main_score_index, 'score_factor': score_factor})
     after = time()
     print(after - before)
     matches = []
