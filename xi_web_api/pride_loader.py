@@ -186,10 +186,28 @@ def create_app():
 
     @app.route('/get_peaklist', methods=['GET'])
     def get_peaklist():
-        id = request.args.get('id')
-        sd_ref = request.args.get('sd_ref')
-        upload_id = request.args.get('upload_id')
-        return jsonify(get_peaklist_object(id, sd_ref, upload_id))
+        conn = None
+        data = {}
+        error = None
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            sql = "SELECT intensity, mz FROM spectrum WHERE id = %s AND spectra_data_ref = %s AND upload_id = %s"
+            cur.execute(sql, [request.args.get('id'), request.args.get('sd_ref'), request.args.get('upload_id')])
+            resultset = cur.fetchall()[0]
+            data["intensity"] = struct.unpack('%sd' % (len(resultset['intensity']) // 8), resultset['intensity'])
+            data["mz"] = struct.unpack('%sd' % (len(resultset['mz']) // 8), resultset['mz'])
+            cur.close()
+        except (Exception, psycopg2.DatabaseError) as e:
+            # logger.error(error)
+            error = e
+        finally:
+            if conn is not None:
+                conn.close()
+                # logger.debug('Database connection closed.')
+            if error is not None:
+                raise error
+            return jsonify(data)
 
     @app.route('/network.html', methods=['GET'])
     def network():
@@ -219,38 +237,6 @@ def create_app():
             # close the communication with the PostgreSQL
             cur.close()
         except (Exception, psycopg2.DatabaseError) as e:
-            error = e
-        finally:
-            if conn is not None:
-                conn.close()
-                # logger.debug('Database connection closed.')
-            if error is not None:
-                raise error
-            return data
-
-    def get_peaklist_object(spectrum_id, spectra_data_ref, upload_id):
-        """ Connect to the PostgreSQL database server """
-        conn = None
-        data = {}
-        error = None
-        try:
-            # connect to the PostgreSQL server
-            conn = get_db_connection()
-
-            # create a cursor
-            cur = conn.cursor()
-
-            sql = "SELECT intensity, mz FROM spectrum WHERE id = %s AND spectra_data_ref = %s AND upload_id = %s"
-
-            cur.execute(sql, [spectrum_id, spectra_data_ref, upload_id])
-            resultset = cur.fetchall()[0]
-            data["intensity"] = struct.unpack('%sd' % (len(resultset[0]) // 8), resultset[0])
-            data["mz"] = struct.unpack('%sd' % (len(resultset[1]) // 8), resultset[1])
-            print("finished")
-            # close the communication with the PostgreSQL
-            cur.close()
-        except (Exception, psycopg2.DatabaseError) as e:
-            # logger.error(error)
             error = e
         finally:
             if conn is not None:
