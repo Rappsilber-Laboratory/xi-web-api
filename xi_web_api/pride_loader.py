@@ -108,7 +108,6 @@ def create_app():
                 raise error
             return ds_rows
 
-
     @app.route('/get_data', methods=['GET'])
     def get_data():
         """
@@ -208,7 +207,7 @@ def create_app():
             # create a cursor
             cur = conn.cursor(cursor_factory=RealDictCursor)
 
-            #data["sid"] = str(uuids)
+            # data["sid"] = str(uuids)
             # data["resultset"], data["searches"] = get_resultset_search_metadata(cur, uuid)
             data["matches"], peptide_clause = get_matches(cur, uuids)
             # data["resultset"]["mainscore"])
@@ -268,7 +267,7 @@ def get_matches(cur, uuids):
     # todo - the join to matchedspectrum for cleavable crosslinker - needs a GROUP BY match_id?'
     sql = """SELECT si.id AS id, si.pep1_id AS pi1, si.pep2_id AS pi2,
                 si.scores AS sc,
-                si.upload_id AS si,
+                cast (si.upload_id as text) AS si,
                 si.calc_mz AS c_mz,
                 si.charge_state AS pc_c,
                 si.exp_mz AS pc_mz,
@@ -284,8 +283,6 @@ def get_matches(cur, uuids):
             AND mp1.link_site1 > 0
             AND mp2.link_site1 > 0;"""
     # bit weird above works when link_site1 is a text column
-    # uuids = [uuid4()]
-    # psycopg2.extras.register_uuid()
     cur.execute(sql, [uuids])
     matches = []
     search_peptide_ids = {}
@@ -297,7 +294,7 @@ def get_matches(cur, uuids):
         for match_row in match_rows:
             peptide1_id = match_row['pi1']
             peptide2_id = match_row['pi2']
-            match_row['si'] = str(match_row['si'])
+            # match_row['si'] = str(match_row['si'])
             search_id = match_row['si']
             if search_id in search_peptide_ids:
                 peptide_ids = search_peptide_ids[search_id]
@@ -311,61 +308,55 @@ def get_matches(cur, uuids):
 
             matches.append(match_row)
 
-    # create sql clause that selects peptides by id and resultset
-    # (search_id = a AND id in(x,y,z)) OR (search_id = b AND (...)) OR ...
-    first_search = True
-    peptide_clause = "("
+    return matches, search_peptide_ids
+
+
+def get_peptides(cur, search_peptide_ids):
+    subclauses = []
     for k, v in search_peptide_ids.items():
-        if first_search:
-            first_search = False
-        else:
-            peptide_clause += " OR "
-        peptide_clause += "(mp.upload_id = '" + str(k) + "' AND mp.id IN ('"
-        # print("rs:" + str(k))
-        first_pep_id = True
+        pep_id_literals = []
         for pep_id in v:
-            # print("pep:" + str(pep_id))
-            if first_pep_id:
-                first_pep_id = False
-            else:
-                peptide_clause += "','"
-            peptide_clause += str(pep_id)
-        peptide_clause += "'))"
-    peptide_clause += ")"
+            pep_id_literals.append(sql.Literal(pep_id))
+        joined_pep_ids = sql.SQL(',').join(pep_id_literals)
+        subclause = sql.SQL("(mp.upload_id = {} AND id IN ({}))").format(
+            sql.Literal(k),
+            joined_pep_ids
+        )
+        subclauses.append(subclause)
+    peptide_clause = sql.SQL(" OR ").join(subclauses)
 
-    return matches, peptide_clause
+    query = sql.SQL("""SELECT mp.id, cast(mp.upload_id as text) AS u_id,
+                mp.base_sequence AS base_seq,
+                array_agg(pp.dbsequence_ref) AS prt,
+                array_agg(pp.pep_start) AS pos,
+                array_agg(pp.is_decoy) AS is_decoy,
+                mp.link_site1 AS "linkSite",
+                mp.mod_accessions as mod_accs,
+                mp.mod_positions as mod_pos,
+                mp.mod_monoiso_mass_deltas as mod_masses,
+                mp.crosslinker_modmass as cl_modmass                     
+                    FROM modifiedpeptide AS mp
+                    JOIN peptideevidence AS pp
+                    ON mp.id = pp.peptide_ref AND mp.upload_id = pp.upload_id
+                WHERE {}
+                GROUP BY mp.id, mp.upload_id, mp.base_sequence;""").format(
+        peptide_clause
+    )
+    logger.debug(query.as_string(cur))
+    cur.execute(query)
 
-
-def get_peptides(cur, peptide_clause):
-    if peptide_clause != "()":
-        sql = """SELECT mp.id, cast(mp.upload_id as text) AS u_id,
-                    mp.base_sequence AS base_seq,
-                    array_agg(pp.dbsequence_ref) AS prt,
-                    array_agg(pp.pep_start) AS pos,
-                    array_agg(pp.is_decoy) AS is_decoy,
-                    mp.link_site1 AS "linkSite",
-                    mp.mod_accessions as mod_accs,
-                    mp.mod_positions as mod_pos,
-                    mp.mod_monoiso_mass_deltas as mod_masses,
-                    mp.crosslinker_modmass as cl_modmass                     
-                        FROM modifiedpeptide AS mp
-                        JOIN peptideevidence AS pp
-                        ON mp.id = pp.peptide_ref AND mp.upload_id = pp.upload_id
-                    WHERE """ + peptide_clause + """
-                    GROUP BY mp.id, mp.upload_id, mp.base_sequence;"""
-        cur.execute(sql)
-        search_protein_ids = {}
-        peptide_rows = cur.fetchall()
-        for peptide_row in peptide_rows:
-            search_id = peptide_row['u_id']
-            if peptide_row['u_id'] in search_protein_ids:
-                protein_ids = search_protein_ids[search_id]
-            else:
-                protein_ids = set()
-                search_protein_ids[peptide_row['u_id']] = protein_ids
-            for prot in peptide_row['prt']:
-                protein_ids.add(prot)
-        return peptide_rows, search_protein_ids
+    search_protein_ids = {}
+    peptide_rows = cur.fetchall()
+    for peptide_row in peptide_rows:
+        search_id = peptide_row['u_id']
+        if peptide_row['u_id'] in search_protein_ids:
+            protein_ids = search_protein_ids[search_id]
+        else:
+            protein_ids = set()
+            search_protein_ids[peptide_row['u_id']] = protein_ids
+        for prot in peptide_row['prt']:
+            protein_ids.add(prot)
+    return peptide_rows, search_protein_ids
 
 
 def get_proteins(cur, search_protein_ids):
