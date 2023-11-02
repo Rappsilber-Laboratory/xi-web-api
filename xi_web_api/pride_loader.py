@@ -247,7 +247,8 @@ def get_matches(cur, uuids):
                 si.spectrum_id AS sp,
                 si.spectra_data_ref AS sd_ref,
                 si.pass_threshold AS pass,
-                si.rank AS r                
+                si.rank AS r,
+                si.sil_id AS sil                
             FROM spectrumidentification si 
             INNER JOIN modifiedpeptide mp1 ON si.pep1_id = mp1.id AND si.upload_id = mp1.upload_id 
             INNER JOIN modifiedpeptide mp2 ON si.pep2_id = mp2.id AND si.upload_id = mp2.upload_id
@@ -267,7 +268,6 @@ def get_matches(cur, uuids):
         for match_row in match_rows:
             peptide1_id = match_row['pi1']
             peptide2_id = match_row['pi2']
-            # match_row['si'] = str(match_row['si'])
             search_id = match_row['si']
             if search_id in search_peptide_ids:
                 peptide_ids = search_peptide_ids[search_id]
