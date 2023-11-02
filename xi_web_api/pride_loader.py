@@ -2,7 +2,7 @@ import struct
 
 from flask import Flask, jsonify, render_template, request
 from flask_cors import CORS
-import psycopg2  # todo - use sqlalchemy instead? LK: There's also flask_sqlalchemy
+import psycopg2
 from psycopg2.extras import RealDictCursor
 from psycopg2 import sql
 import json
@@ -11,7 +11,7 @@ from configparser import ConfigParser
 import os
 import logging.config
 
-# logging.config.fileConfig('logging.ini')
+logging.config.fileConfig('logging.ini')
 logger = logging.getLogger(__name__)
 
 
@@ -52,7 +52,7 @@ def create_app():
     app = Flask(__name__, static_url_path="",
                 static_folder='../static', template_folder='../templates')
 
-    # Load flask config
+    # Load flask config, TODO: app.env is deprecated
     if app.env == 'development':
         app.config.from_object('xi_web_api.config.DevelopmentConfig')
     else:
@@ -75,27 +75,17 @@ def create_app():
 
     @app.route('/', methods=['GET'])
     def index():
-        datasets = get_datasets()
-        return render_template("datasets.html", datasets=datasets)
-
-    def get_datasets():
-        """Get all datasets from the database."""
         conn = None
         ds_rows = []
         error = None
         try:
-            # connect to the PostgreSQL server
             conn = get_db_connection()
-
-            # create a cursor
             cur = conn.cursor()
-
-            sql = """SELECT project_id, identification_file_name FROM upload;"""
-            # logger.debug(sql)
-            cur.execute(sql)
+            query = """SELECT project_id, identification_file_name FROM upload;"""
+            logger.debug(query)
+            cur.execute(query)
             ds_rows = cur.fetchall()
-            # logger.info("finished")
-            # close the communication with the PostgreSQL
+            logger.info("finished")
             cur.close()
         except (Exception, psycopg2.DatabaseError) as e:
             print(e)
@@ -103,10 +93,10 @@ def create_app():
         finally:
             if conn is not None:
                 conn.close()
-                # logger.debug('Database connection closed.')
+                logger.debug('Database connection closed.')
             if error is not None:
                 raise error
-            return ds_rows
+        return render_template("datasets.html", datasets=ds_rows)
 
     @app.route('/get_data', methods=['GET'])
     def get_data():
@@ -129,7 +119,6 @@ def create_app():
 
         conn = None
         uuids = None
-        error = None
         try:
             # connect to the PostgreSQL server
             # logger.info('Connecting to the PostgreSQL database...')
@@ -137,11 +126,11 @@ def create_app():
             cur = conn.cursor()
             if file:
                 filename_clean = re.sub(r'[^0-9a-zA-Z-]+', '-', file)
-                sql = """SELECT id FROM upload 
+                query = """SELECT id FROM upload 
                         WHERE project_id = %s AND identification_file_name_clean = %s 
                         ORDER BY upload_time DESC LIMIT 1;"""
                 # logger.debug(sql)
-                cur.execute(sql, [pxid, filename_clean])
+                cur.execute(query, [pxid, filename_clean])
 
                 uuids = [cur.fetchone()[0]]
                 if uuids is None:
@@ -150,7 +139,7 @@ def create_app():
                 # close the communication with the PostgreSQL
                 cur.close()
             else:
-                sql = """SELECT u.id
+                query = """SELECT u.id
                             FROM upload u
                             where u.upload_time = 
                                 (select max(upload_time) from upload 
@@ -158,7 +147,7 @@ def create_app():
                                 and identification_file_name = u.identification_file_name )
                             and u.project_id = %s;"""
                 # logger.debug(sql)
-                cur.execute(sql, [pxid])
+                cur.execute(query, [pxid])
                 uuids = cur.fetchall()
                 if uuids is None:
                     return jsonify({"error": "No data found"}), 404
@@ -167,19 +156,16 @@ def create_app():
                 cur.close()
 
         except (Exception, psycopg2.DatabaseError) as e:
-            # logger.error(e)
-            error = e
+            logger.error(e)
         finally:
             if conn is not None:
                 conn.close()
-                # logger.debug('Database connection closed.')
-            if error is not None:
-                raise error
+                logger.debug('Database connection closed.')
 
         try:
             data_object = get_data_object(uuids)
         except psycopg2.DatabaseError as e:
-            raise e
+            logger.error(e)
             return jsonify({"error": "Database error"}), 500
 
         return json.dumps(data_object)  # more efficient than jsonify as it doesn't pretty print
@@ -192,11 +178,11 @@ def create_app():
         try:
             conn = get_db_connection()
             cur = conn.cursor()
-            sql = "SELECT intensity, mz FROM spectrum WHERE id = %s AND spectra_data_ref = %s AND upload_id = %s"
-            cur.execute(sql, [request.args.get('id'), request.args.get('sd_ref'), request.args.get('upload_id')])
+            query = "SELECT intensity, mz FROM spectrum WHERE id = %s AND spectra_data_ref = %s AND upload_id = %s"
+            cur.execute(query, [request.args.get('id'), request.args.get('sd_ref'), request.args.get('upload_id')])
             resultset = cur.fetchall()[0]
-            data["intensity"] = struct.unpack('%sd' % (len(resultset['intensity']) // 8), resultset['intensity'])
-            data["mz"] = struct.unpack('%sd' % (len(resultset['mz']) // 8), resultset['mz'])
+            data["intensity"] = struct.unpack('%sd' % (len(resultset[0]) // 8), resultset[0])
+            data["mz"] = struct.unpack('%sd' % (len(resultset[1]) // 8), resultset[1])
             cur.close()
         except (Exception, psycopg2.DatabaseError) as e:
             # logger.error(error)
@@ -213,45 +199,46 @@ def create_app():
     def network():
         return app.send_static_file('network.html')
 
-    def get_data_object(uuids):
-        """ Connect to the PostgreSQL database server """
-        conn = None
-        data = {}
-        error = None
-        try:
-            # connect to the PostgreSQL server
-            conn = get_db_connection()
-
-            # create a cursor
-            cur = conn.cursor(cursor_factory=RealDictCursor)
-
-            # data["sid"] = str(uuids)
-            # data["resultset"], data["searches"] = get_resultset_search_metadata(cur, uuid)
-            data["matches"], peptide_clause = get_matches(cur, uuids)
-            # data["resultset"]["mainscore"])
-            data["peptides"], search_protein_ids = get_peptides(cur, peptide_clause)
-            data["proteins"] = get_proteins(cur, search_protein_ids)
-            # data["xiNETLayout"] = get_layout(cur, uuid)
-
-            # logger.info("finished")
-            # close the communication with the PostgreSQL
-            cur.close()
-        except (Exception, psycopg2.DatabaseError) as e:
-            error = e
-        finally:
-            if conn is not None:
-                conn.close()
-                # logger.debug('Database connection closed.')
-            if error is not None:
-                raise error
-            return data
-
     return app
+
+
+def get_data_object(uuids):
+    """ Connect to the PostgreSQL database server """
+    conn = None
+    data = {}
+    error = None
+    try:
+        # connect to the PostgreSQL server
+        conn = get_db_connection()
+
+        # create a cursor
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        # data["sid"] = str(uuids)
+        # data["resultset"], data["searches"] = get_resultset_search_metadata(cur, uuid)
+        data["matches"], peptide_clause = get_matches(cur, uuids)
+        # data["resultset"]["mainscore"])
+        data["peptides"], search_protein_ids = get_peptides(cur, peptide_clause)
+        data["proteins"] = get_proteins(cur, search_protein_ids)
+        # data["xiNETLayout"] = get_layout(cur, uuid)
+
+        # logger.info("finished")
+        # close the communication with the PostgreSQL
+        cur.close()
+    except (Exception, psycopg2.DatabaseError) as e:
+        error = e
+    finally:
+        if conn is not None:
+            conn.close()
+            # logger.debug('Database connection closed.')
+        if error is not None:
+            raise error
+        return data
 
 
 def get_matches(cur, uuids):
     # todo - the join to matchedspectrum for cleavable crosslinker - needs a GROUP BY match_id?'
-    sql = """SELECT si.id AS id, si.pep1_id AS pi1, si.pep2_id AS pi2,
+    query = """SELECT si.id AS id, si.pep1_id AS pi1, si.pep2_id AS pi2,
                 si.scores AS sc,
                 cast (si.upload_id as text) AS si,
                 si.calc_mz AS c_mz,
@@ -269,7 +256,7 @@ def get_matches(cur, uuids):
             AND mp1.link_site1 > 0
             AND mp2.link_site1 > 0;"""
     # bit weird above works when link_site1 is a text column
-    cur.execute(sql, [uuids])
+    cur.execute(query, [uuids])
     matches = []
     search_peptide_ids = {}
     while True:
