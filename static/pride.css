@@ -69,3 +69,27 @@
 #expDropdownPlaceholder > div > ul > li:nth-child(8) {
     display: none !important;
 }
+
+/*#main > div.controls {*/
+/*    display: none !important;*/
+/*}*/
+
+/*#main > div.mainContent {*/
+/*    bottom:0px;*/
+/*}*/
+
+#alternatives{
+    display: none !important;
+}
+
+/*#bottomDivTopOnly {*/
+/*    display: none !important;*/
+/*}*/
+
+#displayOptionsPlaceholder {
+    display: none !important;
+}
+
+#xiNetButtonBar > span.layoutLabel.noBreak.sectionDividerLeft {
+    border-left: 0;
+}
