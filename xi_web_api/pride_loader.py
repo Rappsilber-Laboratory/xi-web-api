@@ -11,7 +11,7 @@ from configparser import ConfigParser
 import os
 import logging.config
 
-logging.config.fileConfig('logging.ini')
+# logging.config.fileConfig('logging.ini')
 logger = logging.getLogger(__name__)
 
 
@@ -112,7 +112,7 @@ def create_app():
         pxid = request.args.get('project')
         if pxid is None:
             return jsonify({"error": "No project id provided"}), 400
-        elif not re.match(r'^[a-zA-Z0-9]+$', pxid):
+        elif not re.match(r'^[a-zA-Z0-9_]+$', pxid):
             return jsonify({"error": "Invalid project id"}), 400
 
         file = request.args.get('file')
