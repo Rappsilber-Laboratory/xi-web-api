@@ -202,42 +202,62 @@ def create_app():
     return app
 
 
-def get_data_object(uuids):
+def get_data_object(ids):
     """ Connect to the PostgreSQL database server """
     conn = None
     data = {}
     error = None
     try:
-        # connect to the PostgreSQL server
         conn = get_db_connection()
-
-        # create a cursor
         cur = conn.cursor(cursor_factory=RealDictCursor)
-
-        # data["sid"] = str(uuids)
-        # data["resultset"], data["searches"] = get_resultset_search_metadata(cur, uuid)
-        data["matches"], peptide_clause = get_matches(cur, uuids)
-        # data["resultset"]["mainscore"])
-        data["peptides"], search_protein_ids = get_peptides(cur, peptide_clause)
-        data["proteins"] = get_proteins(cur, search_protein_ids)
-        # data["xiNETLayout"] = get_layout(cur, uuid)
-
-        # logger.info("finished")
-        # close the communication with the PostgreSQL
+        data["metadata"] = get_results_metadata(cur, ids)
+        data["matches"] = get_matches(cur, ids)
+        data["peptides"] = get_peptides(cur, data["matches"])
+        data["proteins"] = get_proteins(cur, data["peptides"])
+        logger.info("finished")
         cur.close()
     except (Exception, psycopg2.DatabaseError) as e:
         error = e
     finally:
         if conn is not None:
             conn.close()
-            # logger.debug('Database connection closed.')
+            logger.debug('Database connection closed.')
         if error is not None:
             raise error
         return data
 
+def get_results_metadata(cur, ids):
+    """ Get the metadata for the results """
+    metadata = {}
 
-def get_matches(cur, uuids):
-    # todo - the join to matchedspectrum for cleavable crosslinker - needs a GROUP BY match_id?'
+
+
+    # get AnalysisCollection(s) for each id
+    query = """SELECT ac.upload_id, 
+                ac.spectrum_identification_list_ref, 
+                ac.spectrum_identification_protocol_ref,
+                ac.spectra_data_ref
+            FROM analysiscollection ac
+            WHERE ac.upload_id = ANY(%s);"""
+    cur.execute(query, [ids])
+    metadata["analysis_collections"] = cur.fetchall()
+
+    # get SpectrumIdentificationProtocol(s) for each id
+    query = """SELECT sip.id AS id,
+                sip.upload_id,
+                sip.frag_tol,
+                sip.search_params,
+                sip.analysis_software,
+                sip.threshold
+            FROM spectrumidentificationprotocol sip
+            WHERE sip.upload_id = ANY(%s);"""
+    cur.execute(query, [ids])
+    metadata["spectrum_identification_protocols"] = cur.fetchall()
+
+    return metadata
+
+
+def get_matches(cur, ids):
     query = """SELECT si.id AS id, si.pep1_id AS pi1, si.pep2_id AS pi2,
                 si.scores AS sc,
                 cast (si.upload_id as text) AS si,
@@ -257,34 +277,22 @@ def get_matches(cur, uuids):
             AND mp1.link_site1 > 0
             AND mp2.link_site1 > 0;"""
     # bit weird above works when link_site1 is a text column
-    cur.execute(query, [uuids])
-    matches = []
+    cur.execute(query, [ids])
+    return cur.fetchall()
+
+
+def get_peptides(cur, match_rows):
     search_peptide_ids = {}
-    while True:
-        match_rows = cur.fetchmany(5000)
-        if not match_rows:
-            break
+    for match_row in match_rows:
+        if match_row['si'] in search_peptide_ids:
+            peptide_ids = search_peptide_ids[match_row['si']]
+        else:
+            peptide_ids = set()
+            search_peptide_ids[match_row['si']] = peptide_ids
+        peptide_ids.add(match_row['pi1'])
+        if match_row['pi2'] is not None:
+            peptide_ids.add(match_row['pi2'])
 
-        for match_row in match_rows:
-            peptide1_id = match_row['pi1']
-            peptide2_id = match_row['pi2']
-            search_id = match_row['si']
-            if search_id in search_peptide_ids:
-                peptide_ids = search_peptide_ids[search_id]
-            else:
-                peptide_ids = set()
-                search_peptide_ids[search_id] = peptide_ids
-
-            peptide_ids.add(peptide1_id)
-            if peptide2_id is not None:
-                peptide_ids.add(peptide2_id)
-
-            matches.append(match_row)
-
-    return matches, search_peptide_ids
-
-
-def get_peptides(cur, search_peptide_ids):
     subclauses = []
     for k, v in search_peptide_ids.items():
         pep_id_literals = []
@@ -317,22 +325,20 @@ def get_peptides(cur, search_peptide_ids):
     )
     logger.debug(query.as_string(cur))
     cur.execute(query)
+    return cur.fetchall()
 
+
+def get_proteins(cur, peptide_rows):
     search_protein_ids = {}
-    peptide_rows = cur.fetchall()
     for peptide_row in peptide_rows:
-        search_id = peptide_row['u_id']
         if peptide_row['u_id'] in search_protein_ids:
-            protein_ids = search_protein_ids[search_id]
+            protein_ids = search_protein_ids[peptide_row['u_id']]
         else:
             protein_ids = set()
             search_protein_ids[peptide_row['u_id']] = protein_ids
         for prot in peptide_row['prt']:
             protein_ids.add(prot)
-    return peptide_rows, search_protein_ids
 
-
-def get_proteins(cur, search_protein_ids):
     subclauses = []
     for k, v in search_protein_ids.items():
         literals = []
@@ -344,6 +350,7 @@ def get_proteins(cur, search_protein_ids):
             joined_literals
         )
         subclauses.append(subclause)
+
     protein_clause = sql.SQL(" OR ").join(subclauses)
     query = sql.SQL("""SELECT id, name, accession, sequence,
                      cast(upload_id as text) AS search_id, description FROM dbsequence WHERE ({});""").format(
