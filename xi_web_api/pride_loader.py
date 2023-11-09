@@ -230,7 +230,21 @@ def get_results_metadata(cur, ids):
     """ Get the metadata for the results """
     metadata = {}
 
-
+    # get Upload(s) for each id
+    query = """SELECT u.id AS id,
+                u.project_id,
+                u.identification_file_name,
+                u.provider,
+                u.audits,
+                u.samples,
+                u.bib,
+                u.spectra_formats,
+                u.contains_crosslinks,
+                u.upload_warnings AS warnings
+            FROM upload u
+            WHERE u.id = ANY(%s);"""
+    cur.execute(query, [ids])
+    metadata["mzIdentML_files"] = cur.fetchall()
 
     # get AnalysisCollection(s) for each id
     query = """SELECT ac.upload_id, 
