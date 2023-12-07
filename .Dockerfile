@@ -30,7 +30,7 @@ RUN mkdir -p /home/appuser/logs
 COPY static ./static
 COPY templates ./templates
 COPY tests ./tests
-COPY xi_web_api ./xi_web_api
+COPY xiview_server ./xiview_server
 COPY .env .
 COPY default.database.ini .
 COPY logging.ini .
