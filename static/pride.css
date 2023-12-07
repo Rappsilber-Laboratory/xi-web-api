@@ -93,3 +93,7 @@
 #xiNetButtonBar > span.layoutLabel.noBreak.sectionDividerLeft {
     border-left: 0;
 }
+
+#helpDropdownPlaceholder > div > ul > li:nth-child(1) {
+    display: none !important;
+}
