@@ -43,7 +43,7 @@ spec:
               mountPath: /home/appuser/database.ini
               subPath: database.ini
               readOnly: true
-            - name: log-volume
+            - name: xiview-server-logs-volume
               mountPath: /home/appuser/logs/$app_name
 
 ---
