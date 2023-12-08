@@ -27,8 +27,8 @@ def create_app():
     # add CORS header
     CORS(app)
 
-    from xi2annotator import bp as xi2_bp
-    app.register_blueprint(xi2_bp)
+    # from xi2annotator import bp as xi2_bp
+    # app.register_blueprint(xi2_bp)
 
     @app.route('/network.html', methods=['GET'])
     def network():
