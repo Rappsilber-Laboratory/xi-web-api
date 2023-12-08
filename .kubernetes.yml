@@ -29,9 +29,9 @@ spec:
             items:
               - key: database.ini
                 path: database.ini
-        - name: log-volume
+        - name: xiview-server-logs-volume
           persistentVolumeClaim:
-            claimName: parser-pvc
+            claimName: xiview-server-logs-pvc
       containers:
         - name: $app_name
           image: $IMAGE
