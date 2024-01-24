@@ -5,7 +5,7 @@ ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONFAULTHANDLER 1
-ENV FLASK_ENV production
+ENV FLASK_DEBUG production
 
 COPY *.whl .
 
@@ -24,14 +24,16 @@ RUN echo 'from xisearch2.cython import *; ' | python
 RUN useradd --create-home appuser
 WORKDIR /home/appuser
 USER appuser
+RUN mkdir -p /home/appuser/logs
 
 # Install application into container
 COPY static ./static
 COPY templates ./templates
 COPY tests ./tests
-COPY xi_web_api ./xi_web_api
+COPY xiview_server ./xiview_server
 COPY .env .
 COPY default.database.ini .
+COPY logging.ini .
 COPY .kubernetes.yml .
 
 #FROM base AS production

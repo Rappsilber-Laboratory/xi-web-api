@@ -29,6 +29,9 @@ spec:
             items:
               - key: database.ini
                 path: database.ini
+        - name: xiview-server-logs-volume
+          persistentVolumeClaim:
+            claimName: xiview-server-logs-pvc
       containers:
         - name: $app_name
           image: $IMAGE
@@ -40,6 +43,8 @@ spec:
               mountPath: /home/appuser/database.ini
               subPath: database.ini
               readOnly: true
+            - name: xiview-server-logs-volume
+              mountPath: /home/appuser/logs/$app_name
 
 ---
 apiVersion: v1
