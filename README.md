@@ -31,7 +31,7 @@ flask is not suitable for production use, so you should use a production server 
 
 You should now see a list of parsed datasets at http://127.0.0.1:5000/
 
-At the moment, if you need to change the path to the API serving te data, edit lines 168 & 169 of netwrok.html and line 40 of app.py.
+At the moment, if you need to change the path to the API serving te data, edit lines 168 & 169 of network.html and line 40 of app.py.
 
 
 
