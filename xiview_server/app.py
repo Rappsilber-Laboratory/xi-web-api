@@ -1,4 +1,8 @@
-from flask import Flask
+import json
+import urllib
+
+import psycopg2
+from flask import Flask, render_template
 from flask_cors import CORS
 # import logging.config
 
@@ -29,6 +33,13 @@ def create_app():
 
     from xi2annotator import bp as xi2_bp
     app.register_blueprint(xi2_bp)
+
+    @app.route('/', methods=['GET'])
+    def index():
+        # fetch datasets from http://127.0.0.1:8081/pride/archive/xiview/ws/data/get_datasets
+        with urllib.request.urlopen("http://127.0.0.1:8081/pride/archive/xiview/ws/data/get_datasets") as url:
+            ds_rows = json.load(url)
+            return render_template("datasets.html", datasets=ds_rows)
 
     @app.route('/network.html', methods=['GET'])
     def network():
