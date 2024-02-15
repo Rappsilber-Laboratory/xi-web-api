@@ -158,11 +158,8 @@
 
 <script>
     //<![CDATA[
-    //     window.xiSpecBaseDir = "/spectrum/"; // you may need to edit this depending on where xiView_container is in web server folder
-    window.xiAnnotRoot = "http://xi.bioanalytik.tu-berlin.de:8084/xiAnnotator/";
-    window.peakListUrl = "/get_peaklist"; // todo make this a param
-    xiview.main("XI2", "/get_data");
-
+    xiview.main("XI2", "/get_data", "/get_peaklist",
+        "http://xi.bioanalytik.tu-berlin.de:8084/xiAnnotator/", "/load_layout", "/save_layout");
     //]]>
 </script>
 

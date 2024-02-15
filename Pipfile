@@ -4,11 +4,12 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-flask = "==2.2.3"
+flask = {extras = ["async"], version = "*"}
 flask_cors = "*"
 psycopg2 = "*"
 python-dotenv = "*"
 waitress = "*"
+orjson = "*"
 
 [dev-packages]
 pytest-cov = "*"
