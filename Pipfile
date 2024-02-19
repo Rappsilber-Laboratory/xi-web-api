@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 flask = {extras = ["async"], version = "*"}
 flask_cors = "*"
+flask-compress = "*"
 psycopg2 = "*"
 python-dotenv = "*"
 waitress = "*"

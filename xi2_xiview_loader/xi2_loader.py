@@ -1,12 +1,12 @@
 import json
 import re
 from configparser import ConfigParser
-from time import time
 
 import orjson
 import psycopg2
 from flask import Flask, request
 from flask_cors import CORS
+from flask_compress import Compress
 from psycopg2 import sql
 from psycopg2.extras import RealDictCursor
 
@@ -20,6 +20,7 @@ def create_app(config='database.ini'):
     """
     app = Flask(__name__, static_url_path="", static_folder='../static')
     CORS(app)
+    Compress(app)
 
     def parse_database_info(filename, section='postgresql'):
         """
