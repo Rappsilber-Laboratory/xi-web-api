@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>index</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+@import url("../../docs.css");
+@import url("../docs.css");
+@import url ("/xidocs/docs.css");
+</style>
+</head>
+<body>
+<h2>Xi Search History Page</h2>
+<p>The Xi Search History page is a paged table consisting of one row per search, with columns detailing meta-data for each search. Restricted users will see only their own searches; standard users can also see all non-private searches from other users. Superusers (Xi Administrators) can see all searches regardless of the search privacy settings.</p>
+<h3>Title Bar</h3>
+<p>For non-restricted users, the title bar contains a radio button option to see either only your searches or all searches you have permission to see - the default is to see only your own searches. Also, dependent on being a non-restricted user, there will be a button to launch a new search i.e. go to the <a href="../../html/searchSubmit/index.html">Search Submit</a> page. There are also buttons that a) link to the <a href="../../html/userGUI/index.html#userAdmin">User Admin</a> page, b) link to this help page, c) allow logging out, and a <em>Keep</em> checkbox which is explained at the end of the next section.</p>
+<h3>Table Controls</h3>
+<p>Paging is controlled through the <em>Page Number</em> control at the top left.</p>
+<p>Hiding or showing columns of interest can be done using the &quot;Show Columns&quot; dropdown. Uncheck or check the individual columns according to preference.</p>
+<p>Filtering is performed by entering text in the text fields below the table headers. Filters in different columns are applied conjunctively, i.e. a search must satisfy all filters to be shown. An individual filter can contain several terms; again these are applied conjunctively e.g. &quot;lum bs3&quot; in the Visualise Search column will only match searches with both &quot;lum&quot; and &quot;bs3&quot; in their names.</p>
+<p>Sorting can be performed on those columns with an arrow icon next to the filter text field. The default sort is by date.</p>
+<p>These controls can be used together to find searches of interest, though generally the filtering is the most useful.</p>
+<p>The <em>Keep Settings</em> control in the title bar, if checked, will keep the current filtering, ordering and column visibility settings for when the history page is next accessed on the same computer.</p>
+<h3>Visualise a Single Search</h3>
+<p>Links in the first two columns - <em>Visualise Search</em> and <em>+FDR</em> - launch the <a href="../../html/xiview.html">Xi Visualisation</a>. The first column's link only loads auto-validated crosslinks into the visualisation. The second column's link (<em>+FDR</em>) also loads decoy and unvalidated crosslinks, which allows basic FDR (False Discovery Rate) calculations to be used as a filter within the visualisation.</p>
+<h3>Visualise Aggregated Searches</h3>
+<p>Aggregate multiple searches for visualisation using the number input widgets in the <em>Agg Group</em> column. Enter a number for each search that should be aggregated. <strong>Number Meaning</strong>:  Groups of searches marked with different numbers will be distinguishable from each other in the resulting visualisation through two mechanisms. Firstly, the group colouring scheme will colour crosslinks according to which search group their matches (filtered) are in; crosslinks that are composed of filtered matches from more than one group will be coloured neutrally. Secondly, the filter bar will contain options to hide all matches from each group.</p>
+<p>Press the <em>Aggregate</em> button in the title bar to view the aggregated searches with auto-validated links only. Press the <em>Agg. For FDR</em> button to include decoy and unvalidated links so an FDR filtering can be performed in the visualisation (exactly as for the single search).</p>
+<h3>Validate a Search</h3>
+<p>Click the underlined 'Validate' text in the <em>Validation</em> column to show a selection dialog for a particular search. This dialog has options to validate various combinations of cross-links - including linear peptides and/or decoy proteins. Selecting an option will then take you to the search's validation page and populate it with the requested cross-links.</p>
+<h3>Delete a Search</h3>
+<p>Delete a search by pressing the button in the <em>Delete</em> column for a search. If the button is not present, you don't have the rights to delete it. A dialog will then appear asking if you are sure you wish to delete the search - as this cannot be undone unless you are a superuser.</p>
+<h3>Restart a Search</h3>
+<p>Restarting a stalled search can be performed by pressing the Restart button that may appear in this column. Completed and active searches will not display this option. Again, the buttons also only appear if you have permission to restart that search, and a dialog will ask if you definitely wish to proceed with this operation.</p>
+<h3>Base a New Search on an Existing Search</h3>
+<p>The process of setting up the <a href="../../html/searchSubmit/index.html">Search Submit</a> page can be eased by pre-populating it with another search's parameters. Show the <em>Base New</em> column via &quot;Show Columns&quot; and then select the button in the column for the existing search you wish to base a new search on. Note that parameters does not include the sequence and acquisition files.</p>
+<h3>Other Information</h3>
+<p>Other columns show additional meta-data relating to individual searches.</p>
+<ul>
+<li><em>Visualise Search</em>: The search state is appended to the name of the search in this column. This shows whether a search is queuing, being processed, has an error, or has completed. Uncompleted searches will not have a link to launch the visualisation.</li>
+<li><em>Notes</em>: If a search had notes added when it was submitted in the <a href="../../html/searchSubmit/index.html">Search Submit</a> page they will be shown here. Generally the tooltip will be needed to see the full text - hover over the text to see it.</li>
+<li><em>Sequence</em>: The file name of the .fasta file used in the search.</li>
+<li><em>Enzyme</em>: The enzyme used in the search.</li>
+<li><em>Cross-Linkers</em>: A list of the cross-linkers used in the search.</li>
+<li><em>Submit date</em>: The date the search was submitted.</li>
+<li><em>ID</em>: The search ID.</li>
+<li><em>User</em>: The user who submitted the search.</li>
+</ul>
+
+</body>
+</html>
+<!-- This document was created with MarkdownPad, the Markdown editor for Windows (http://markdownpad.com) -->

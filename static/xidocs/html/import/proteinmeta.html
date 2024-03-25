@@ -1,0 +1,25 @@
+<h2>Importing Protein Metadata from a CSV File</h2>
+
+<p>Imported protein metadata can be used to colour the protein via 'View' > 'Legend &amp; Colours'</p>
+
+<p>A simple example of such a CSV file is given here:</p>
+
+<pre><code>ProteinID,Name,Quantification,Complex
+P02768,A Human protein,423,ribosome
+</code></pre>
+
+<p>The columns 'Name' and 'Complex' are special cases.</p>
+
+<p>'Name' changes the name of the protein with that ID,
+if you save the layout the new names are also saved in that layout.</p>
+
+<p>'Complex' places the protein in a group with that name,
+groups are also saved in the layout.</p>
+
+<p>All other metadata columns are treated as follows:</p>
+
+<ul>
+<li><p>if they contain only hex colour values the protein is given that colour,</p></li>
+<li><p>if they contain only numerical values they are given a threshold scale with a range slider,</p></li>
+<li><p>anything else is assigned a categorical colour scheme based on the contents of the column.</p></li>
+</ul>

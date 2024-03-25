@@ -94,6 +94,6 @@
     border-left: 0;
 }
 
-#helpDropdownPlaceholder > div > ul > li:nth-child(1) {
-    display: none !important;
-}
+/*#helpDropdownPlaceholder > div > ul > li:nth-child(1) {*/
+/*    display: none !important;*/
+/*}*/
