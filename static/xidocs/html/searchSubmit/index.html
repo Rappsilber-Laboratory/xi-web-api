@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>index</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+@import url("../../docs.css");
+@import url("../docs.css");
+@import url ("/xidocs/docs.css");
+</style>
+</head>
+<body>
+<h2>Xi Search Submission Page</h2>
+<p>The Xi Search Submission Page is the mechanism through which new searches are specified and passed to Xi. The page is broken into 3 logical steps (4 including the final Submit action). The sections below describe what each step does and how to complete it.</p>
+<p><img src="../../img/submit.png" alt="Search Submission Screenshot" /></p>
+<h3>1. Choose Acquisitions</h3>
+<p>Acquisitions may be included in a new search in two ways.</p>
+<ol>
+<li>Construct a new acquisition to be uploaded to the Xi Database and then used in a search.</li>
+<li>Choose from a list of previously uploaded acquisitions. Depending on your profile rights, you may see only your own previous acquisitions or those uploaded by other users too.</li>
+</ol>
+<h4>Upload New Acquisition</h4>
+<p>Open the section labelled <em>Upload New Acquisition</em>. A small form will appear. Three actions need to be completed before the upload is ready to start.</p>
+<ol>
+<li>Pick and enter a name for the acquisition you are uploading. Choose something that's descriptive of the data you are going to upload.</li>
+<li>Press the <em>Add Files</em> button to open a file dialog to choose one or more files to be parcelled up into this acquisition. Xi currently supports .mgf, .msm, .apl and .zip files and so you are limited to selecting these types of file. Once you have chosen your files they will be listed below the form.</li>
+<li>Decide whether you wish this upload to be private to yourself by ticking the <em>Set Upload To Private</em> checkbox.</li>
+</ol>
+<p>Once steps 1 and 2 have been completed to the form's satisfaction the <em>Start Upload</em> button will be enabled. Press this to start the upload. Progress bars will then show the upload completing, and upon completion, the files will be relisted as &quot;Uploaded&quot;. A text box will also appear under the <em>Choose Acquisitions</em> label to indicate this upload has been automatically added to the current set of chosen acquisitions. The close button in the text box will uninclude it.</p>
+<p>This section will also alert the user if they are trying to upload a file with the same name as one that has already been uploaded. It will not prevent the upload (as obviously they may well be different in content), but will ask the user to check if perhaps the acquisition they're wanting to upload may already be present, by looking in the &quot;Choose Previous Acquistions&quot; section, which is described next.</p>
+<h4>Choose Previous Acquisitions</h4>
+<p>Open the section labelled <em>Choose Previous Acquisitions</em>. This, with restrictions according to your user profile, reveals a paged table of previous acquisition uploads to choose from.</p>
+<p>The table is sorted by <em>Id</em> by default, which produces an identical ordering to sorting the table by <em>Date</em>. The table can also be sorted by other metadata: <em>Name</em>, <em>User</em>, <em>Files</em>, or <em>#</em> (File Count); and pages can be navigated using the number input and arrows next to &quot;Page Number&quot;.</p>
+<p>Like the history page, the table has a filter associated with each column. These can be used to find specific acquisitions when you know their attributes, or are searching for acquisitions with given attributes. The filters are conjunctive, so only acquisitions that match all the filter conditions will be shown. Multiple entries, separated by spaces, can be entered in individual filters and the table will only return those that match all for that column (i.e. conjunctive again). The one quirk here is that as the <em>#</em> column is a number, then two numbers entered here act as a range e.g. typing &quot;3 12&quot; will return acqusition with between 3 and 12 files inclusive.</p>
+<p>Tick the checkboxes in the <em>Choose</em> column to choose one or more acquisitions. Choices made here will be added to the collection of text boxes under the <em>Choose Acquisitions</em> label. Untick the checkboxes in the <em>Choose</em> column or press the close icons in the textboxes to remove a choice.</p>
+<h3>2. Choose Sequences</h3>
+<p>The <em>Choose Sequences</em> step is equivalent to the <em>Choose Acquisitions</em> step except for these differences:</p>
+<ol>
+<li>Only one file can be associated with a new sequence upload.</li>
+<li>Sequence uploading accepts .fasta or .txt files.</li>
+<li>The table in <em>Choose Previous Sequences</em> lacks a File Count column as the count is necessarily always 1.</li>
+<li>The same table has a <em>Download</em> column where sequences can be downloaded to your local computer, dependent on user permissions.</li>
+</ol>
+<h3>3. Set Search Parameters</h3>
+<p>This step involves setting the following parameters for the new search:</p>
+<ul>
+<li>Name (optional)</li>
+<li>Cross-Linker</li>
+<li>Enzyme</li>
+<li>Ms Tolerance</li>
+<li>Ms2 Tolerance</li>
+<li>Missed Cleavages</li>
+<li>Missing Mono-Isotopic Peaks</li>
+<li>Fixed Modifications</li>
+<li>Variable Modifications</li>
+<li>Ions</li>
+<li>Losses</li>
+<li>Search Notes (optional)</li>
+</ul>
+<p><em>Name</em> is used in the search listings in the <a href="../history/index.html">Xi Search History</a> page. Choose a name that reflects the search, otherwise it will default to concatenating all the chosen acqusition names along with a timestamp.</p>
+<p><em>Cross-Linker</em> is initially a single-choice option that can be changed to allow the selection of multiple cross-linkers for the search. Click &quot;Allow Multiple Selections&quot; in the dropdown to allow this.</p>
+<p><em>Enzyme</em> is by default a single-choice option. Use the radio buttons within the drop-down to make your choice.</p>
+<ul>
+<li>Alternatively, press the &quot;Construct Sequential Digestion&quot; button in the dropdown to make a digestion composed of more than one enzyme. Here, add new steps with the &quot;Add New Digestion Step&quot; button and then choose the enzyme for that step through a drop-down. Set local Missed Cleavages settings by checking the &quot;Local MC&quot; checkbox for the step and entering a value in the revealed number input - if unset, that step will use the global Missed Cleavages setting. Steps can be deleted (if more than one) by pressing the button marked with an 'X', and reordered by dragging the 'double-arrow' icons. &quot;Revert to Single Enzyme Choice&quot; will return to the single enzyme selection state.</li>
+</ul>
+<p><em>Ms Tolerance</em> and <em>Ms2 Tolerance</em> are numeric inputs and also have a choice of units (parts per million or Daltons).</p>
+<p><em>Missed cleavages</em> is a numeric input with no units and a default value of 4.</p>
+<p><em>Missing Mono-Isotopic Peaks</em> is a numeric input with no units and a default value of 2.</p>
+<p><em>Fixed Modifications</em>, <em>Variable Modifications</em>, <em>Ions</em> and <em>Losses</em> are all parameters for which multiple choices can be made. Select as many options as the search requires using the checkboxes in each parameters' drop-down menu. <em>Ions</em> has the extra restriction that at least one of the options must be chosen.</p>
+<p><em>Search Notes</em> can be used to add more information about the search, useful as a memory aid for later. The <em>Custom Settings</em> textbox is really only used by the Xi Database Admin to set custom flags to a search, and not intended for general use.</p>
+<p>To reduce user input fatigue a set of sensible defaults are displayed, so you only need to change the ones that are unsuitable for your new search. These defaults can be restored using the <em>Use Default Parameters</em> button. The parameters from your last search can be reapplied using the <em>Use Your Last Search Params</em> button.</p>
+<h3>4. Submit</h3>
+<p>If the previous steps have been completed, then the <em>Submit New Search</em> button will be enabled and the neighbouring warning message will have changed from red to green. If there are still uncompleted parts of the page the warning message will still be red and list the missing information types.</p>
+<p>Choose whether you wish the search to be private using the <em>Set Search As Private?</em> checkbox. This acts in a similar manner to the private acquisition and sequence upload options, in that a private search will only be visible to you and Xi administrators.</p>
+<p>Once happy with the choices made on the page, press <em>Submit New Search</em> to register and start the search on the Xi Search Engine. You'll then be directed to the <a href="../history/index.html">Xi Search History</a> page where its progress can be monitored, or another new search begun.</p>
+<h3>Addendum</h3>
+<h4>Add New Crosslinker</h4>
+<p>The <em>Cross-linker</em> selection has next to it, with the usual caveat of user permissions, an option to allow the creation of a new cross-linker. Click the <em>+ New</em> button to bring up a dialog like that seen below:</p>
+<p><img src="../../img/newlinker.png" alt="New Crosslinker Screenshot" /></p>
+<p>Here, there are options to give a new crosslinker a name, a mass and a type (asymmetric / symmetric).</p>
+<p>Asymmetric crosslinkers will show two lists of amino acids and end terminals which can be selected for inclusion as possible sites for crosslinking. Selected amino acids can also be given a penalty score (0 as default).</p>
+<p>Symmetric crosslinkers will show one list and a small table of modifications that can be selected.</p>
+<p>When the mouse pointer is inside an amino acid table, the border will highlight in blue, and pressing keys corresponding to the amino acid codes in the <em>Press</em> column will check/uncheck those amino acids. This is often quicker than selecting individual checkboxes by mouse.</p>
+<p>To make things easier, an existing crosslinker can be used as the basis for the new crosslinker. Select one from the &quot;Base New Crosslinker On&quot; drop-down. Mass, type and selected amino acids will be copied over. At the moment this doesn't handle photoreactive crosslinkers and other edge cases. Make sure to explicitly change the details that need changing (mass usually).</p>
+<p>Once happy with the set-up of the cross-linker, select <em>Add</em> at the bottom of the dialog to add the new cross-linker to the database (or <em>Cancel</em> if you choose not to).</p>
+
+</body>
+</html>
+<!-- This document was created with MarkdownPad, the Markdown editor for Windows (http://markdownpad.com) -->

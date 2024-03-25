@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>alignment</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+@import url("../../docs.css");
+@import url("../docs.css");
+@import url ("/xidocs/docs.css");
+</style>
+</head>
+<body>
+<h2>Alignment View</h2>
+<p><img src="../../img/alignment.png" alt="Alignment View" /></p>
+<p>Search sequences in the search data can often be slightly different from the sequences for the same proteins in the Uniprot database, and often radically different to those in PDB files for the same proteins. These differences are usually due to missing end and start sequences but can also include residue differences within the sequence and misalignments. xiVIEW automatically aligns these different sequences so Uniprot annotations appear in the correct place and cross-links in the 3D view are correctly positioned. This view displays the results of these alignments for user inspection along with some controls for tweaking the alignment algorithm (Gotoh) used.</p>
+<h3>Representation</h3>
+<p>The search protein set is displayed as a set of tabs at the top of the view. Upon selection of one of these tabs, the protein it represents and the sequences associated with it are shown below the tabbed section. Each uniprot or pdb sequence is paired with the search sequence for that protein and the alignment showed as a pair of text strings. Colouring is used to represent differences between the two sequences, which can be either:</p>
+<ul>
+<li>Matching - no colour</li>
+<li>Different - orange</li>
+<li>Missing (in the search sequence but not the compared sequence) - blue</li>
+<li>Extra (in the compared sequence but not the search sequence) - green</li>
+</ul>
+<h3>Interaction</h3>
+<p>Proteins are selected by clicking one of the named tabs at the top of the panel - this will then populate the rest of the panel with that protein's information.</p>
+<p>Moving the mouse over a Uniprot or PDB sequence will reveal details of a part of the sequence which is matching, missing or extra to the search sequence. Often, sequences are too long to view wholly within the panel so a scroll bar is provided to access the full length of the sequences.</p>
+<h3>Options</h3>
+<p>If more than one protein is present, the tab section of the panel will include a dropdown with options for sorting the tabs. These options being:</p>
+<ul>
+<li>Sort by protein name</li>
+<li>Sort by number of aligned sequences</li>
+<li>Sort by the total score of aligned sequences</li>
+</ul>
+<p>Beneath the section that displays the current protein's sequence information is a trio of radio buttons for controlling the display of the residues in the sequence pairs. The options being</p>
+<ul>
+<li>Either the entire sequences can be shown (&quot;show all&quot;)</li>
+<li>Only the matching portions of the sequences (&quot;show similarities only&quot;)</li>
+<li>Only the different portions of the sequences (&quot;show differences only&quot;).</li>
+</ul>
+<p>Resulting elided sections of the sequences are replaced with a sequence of quotation marks, whose length is logarithmically related to the length of the elided section, e.g. &quot;&quot; represents 10-100 elided residues.</p>
+<p>At the bottom of the panel are three controls for tweaking the Gotoh alignment algorithm. Both the &quot;Gap Open Penalty&quot; and the &quot;Gap Extend Penalty&quot; quantities can be changed, along with the Blosum matrix type the alignment scoring is derived from. These changes are local to the protein currently under examination in this view.</p>
+
+</body>
+</html>
+<!-- This document was created with MarkdownPad, the Markdown editor for Windows (http://markdownpad.com) -->
