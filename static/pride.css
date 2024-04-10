@@ -97,3 +97,10 @@
 /*#helpDropdownPlaceholder > div > ul > li:nth-child(1) {*/
 /*    display: none !important;*/
 /*}*/
+
+:root {
+    /*--main-color:#091D42;*/
+    /*--main-color:red;*/
+    --main-color:rgb(55, 58, 54) !important;;
+    /*#333;*/
+}
