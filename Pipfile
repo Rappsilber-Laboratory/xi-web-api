@@ -4,15 +4,14 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-setuptools = "57.5.0"
-flask = "==2.2.3"
+flask = {extras = ["async"], version = "*"}
 flask_cors = "*"
-Werkzeug = ">=2.2,<3.0"
-#psycopg2 = "*"
+flask-compress = "*"
 psycopg2-binary = "2.9.5"
 python-dotenv = "*"
 waitress = "*"
-xisearch2 = {path = "../xisearch2-2.0.1-py3-none-any.whl"}
+zipfile_deflate64 = "*"
+xisearch2 = {path = "../xisearch2-2.0.2-py3-none-any.whl"}
 
 [dev-packages]
 pytest-cov = "*"
