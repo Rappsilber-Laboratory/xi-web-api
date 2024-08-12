@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>index</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+@import url("../../docs.css");
+@import url("../docs.css");
+</style>
+</head>
+<body>
+<h2>Xi Login System</h2>
+<p>The Xi login system consists of a number of pages to control user logins, password resets, adding new users and changing existing user details.</p>
+<h3>Registering as a user</h3>
+<p><img src="../../img/register.png" alt="Register Page Screenshot" /></p>
+<p>Go to the <a href="/userGUI/userReg.html">Create New Xi User Account</a> page and pick a username, email address and password combination to be used for your Xi account. Complete the recaptcha form (used to prevent automatic registering), and then press the <em>Create My Xi Account</em> button. If either the username or email address are already in use you'll be notified and asked to pick alternatives. Otherwise you will get a success message on-screen, and you'll receive an email stating a Xi administrator will shortly authorise your account.</p>
+<h3>Logging in</h3>
+<p><img src="../../img/login.png" alt="Login Page Screenshot" /></p>
+<p><a href="/userGUI/userLogin.html">Log in</a> using the username and password combination you chose when creating your account. You'll then be taken to the <a href="../history/index.html">Xi Search History</a> page.</p>
+<h3>Resetting your password</h3>
+<p>Forgotten passwords can be reset by selecting <em>Reset Password</em> next to the 'Forgotten Password?' label on the log in page. You'll then see a page asking for either your email or Xi username, along with a recaptacha dialog. Complete these details and press the <em>Get Email with Reset Password Link</em> button. You will then receive an email which contains a unique time-limited link to a page from which your password can be reset. On this page simply choose a new password and press <em>Set New Password</em>.</p>
+<p>This process may seem convoluted but it ensures only the owner of the account's registered email (i.e. you) can set a new password. Also, until the password reset is performed, the old password remains in force, so no-one can disable your account by typing in your username/email and requesting new passwords.</p>
+<p><a name="userAdmin"></a></p>
+<h3>Change User Details / Admin</h3>
+<p>Change your details once logged in by pressing the <em>User Admin</em> button on the <a href="../history/index.html">Xi Search History</a> page (or access directly at <a href="/userGUI/userAdmin.html">userGUI/userAdmin.html</a>). For regular users the only editable item is the email address. This can be changed and, if validated, then set by pressing the <em>Update User</em> button. A password reset can be requested by pressing <em>Reset Password</em>. Finally, your account can be deactivated by pressing <em>Delete User</em>. This can only be undone by appealing to a Xi Administrator - a dialog asks if you are completely sure.</p>
+<p>If you have administrator privileges the above operations can be performed on any members of the entire Xi user base. Also, the <em>User Group</em> of each user can be changed, with each group having different privileges. Currently these are:</p>
+<ol>
+<li>Awaiting Approval - User is registered but currently has no read or create privileges. Essentially awaiting assignment to another group.</li>
+<li>Past Members / Students - Can read own past searches, no search creation rights.</li>
+<li>Reader - Can see all non-private searches and data, but no search creation rights.</li>
+<li>External Member - User can read own searches, and create a limited number of searches (&lt;10).</li>
+<li>Student - As per External Member, but with a higher limit on new searches (&lt;100).</li>
+<li>Internal - Can see all non-private searches and data and create many new searches (&lt;10000).</li>
+<li>Administrator - As per Internal, but can view private searches and has user deletion rights.</li>
+</ol>
+
+</body>
+</html>
+<!-- This document was created with MarkdownPad, the Markdown editor for Windows (http://markdownpad.com) -->
